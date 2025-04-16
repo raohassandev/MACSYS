@@ -372,14 +372,14 @@ export default function DeviceForm() {
 
   return (
     <div style={{ margin: 16 }}>
-      <div className='max-w-6xl mx-auto p-4 bg-white rounded-lg shadow-lg'>
+      <div className='max-w-6xl mx-auto p-4 bg-white rounded-lg shadow-lg '>
         <div className='flex justify-between items-center mb-4'>
           <h1 className='text-xl font-bold text-gray-800'>
             Modbus Devices Management
           </h1>
           <button
             onClick={() => setShowForm(!showForm)}
-            className='px-4 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500'
+            className='px-4 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
           >
             {showForm ? 'Close Form' : 'Add New Device'}
           </button>
@@ -639,7 +639,7 @@ export default function DeviceForm() {
                 <button
                   type='button'
                   onClick={addRegister}
-                  className='px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-500'
+                  className='px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-blue-500'
                 >
                   Add Register
                 </button>

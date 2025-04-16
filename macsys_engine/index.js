@@ -9,7 +9,7 @@ import router from './routes/api.js';
 
 const app = express();
 
-app.use(
+app.use( 
   cors({
     // origin: 'http://localhost:5173', //  Set to your React app's origin
     origin: '*', //  Set to your React app's origin
