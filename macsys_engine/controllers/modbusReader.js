@@ -4,7 +4,6 @@ import RealtimeData from '../models/RealtimeData.js';
 
 export async function readAndStore(devices, type = 'realtime') {
   const enabledDevices = devices.filter((d) => d.enabled);
-  // console.log('Total enabled devices', enabledDevices.length);
 
   const client = new ModbusRTU();
   let isConnected = false;
@@ -14,10 +13,8 @@ export async function readAndStore(devices, type = 'realtime') {
       const res = await client.connectTCP(enabledDevices[0].ip, {
         port: enabledDevices[0].port,
       });
-      // console.log('success => ');
       isConnected = true;
     } catch (error) {
-      console.log('failed');
       console.log('Connection Failed', error);
     }
     if (!isConnected) {
@@ -55,13 +52,10 @@ export async function readAndStore(devices, type = 'realtime') {
           await HistoricalData.create(payload);
         }
 
-        // console.log(
-        //   `Name:${device.name} ID:${device.slaveId} Temperature:${data.temperature} Setpoint: ${device.setpoint} reading success`,
-        //   payload
-        // );
+        console.log(payload.device, 'Temp->',payload.data.temperature);
       } catch (err) {
         //FIXME: uncomment the modbus errors
-        // console.error(`Error reading ${device.name}:`, err.message);
+        console.error(`Error reading ${device.name}:`, err.message);
       }
     }
   } catch (connectErr) {
