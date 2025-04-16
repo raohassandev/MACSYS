@@ -13,6 +13,8 @@ const deviceSchema = new mongoose.Schema({
   slaveId: Number,
   registers: [registerSchema],
   enabled: Boolean,
+  setpoint: Number,
+  control: String
 });
 
 export default mongoose.model('Device', deviceSchema);

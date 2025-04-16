@@ -1,16 +1,17 @@
-import DataPoint from '../models/DataPoint.js';
 import Device from '../models/Device.js';
+import HistoricalData from "../models/HistoricalData.js"
+import RealtimeData from '../models/RealtimeData.js';
 import express from 'express';
 
 const router = express.Router();
 
 router.get('/latest', async (req, res) => {
-  const data = await DataPoint.find().sort({ timestamp: -1 }).limit(10);
+  const data = await RealtimeData.find().sort({ timestamp: -1 }).limit(10);
   res.json(data);
 });
 
 router.get('/history', async (req, res) => {
-  const data = await DataPoint.find({
+  const data = await HistoricalData.find({
     timestamp: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
   });
   res.json(data);
@@ -60,7 +61,8 @@ router.put('/updateDevice', async (req, res) => {
 });
 
 // Delete a device
-router.delete('/delete:id', async (req, res) => {
+router.delete('/delete/:id', async (req, res) => {
+  console.log('delete request ', req.body);
   try {
     const deletedDevice = await Device.findByIdAndDelete(req.params.id);
 
