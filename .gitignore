@@ -1,0 +1,63 @@
+# Engine
+
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# Compiled output
+macysys-engine/dist/
+macysys-engine/build/
+macysys-engine/out/
+macysys-engine/bundle/
+
+# Dependencies
+macysys-engine/node_modules/
+macysys-engine//bower_components
+macysys-engine/jspm_packages/
+macysys-engine/yarn-berry/
+
+# Logs
+logs*
+*.log
+macysys-engine/npm-debug.log*
+macysys-engine/yarn-debug.log*
+macysys-engine/yarn-error.log*
+macysys-engine/lerna-debug.log*
+macysys-engine/.pnpm-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+macysys-engine/report.*.json
+
+
+macysys-engine/.vscode/ # VSCode settings, but you might want to commit some
+macysys-engine//build
+
+
+# Web
+
+
+# Compiled output
+macysys-web/dist/
+macysys-web/build/
+macysys-web/out/
+macysys-web/bundle/
+
+# Dependencies
+macysys-web/node_modules/
+macysys-web//bower_components
+macysys-web/jspm_packages/
+macysys-web/yarn-berry/
+
+# Logs
+logs*
+*.log
+macysys-web/npm-debug.log*
+macysys-web/yarn-debug.log*
+macysys-web/yarn-error.log*
+macysys-web/lerna-debug.log*
+macysys-web/.pnpm-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+macysys-web/report.*.json
+
+
+macysys-web/.vscode/ # VSCode settings, but you might want to commit some
+macysys-web//build

@@ -1,0 +1,22 @@
+{
+  "name": "modbus-mongodb-app",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "modbus-serial": "^8.0.11",
+    "mongoose": "^7.3.4"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "nodemon": "^3.0.1",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.4"
+  }
+}
