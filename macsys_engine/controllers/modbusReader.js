@@ -15,6 +15,7 @@ export async function readAndStore(devices, type = 'realtime') {
       });
       isConnected = true;
     } catch (error) {
+      isConnected = false;
       console.log('Connection Failed', error);
     }
     if (!isConnected) {
@@ -40,7 +41,7 @@ export async function readAndStore(devices, type = 'realtime') {
         const payload = {
           device: device.name,
           timestamp: new Date(),
-          data: data, //{ ...data, setpoint: device.setpoint, control: device.control },
+          data: data, 
         };
 
         if (type === 'realtime') {

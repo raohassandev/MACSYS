@@ -28,6 +28,7 @@ mongoose
       await updateDeviceCache();
     }, config.configCheckInterval);
 
+
     setInterval(async () => {
       await readAndStore(getDeviceCache(), 'realtime');
     }, config.realtimeInterval);
