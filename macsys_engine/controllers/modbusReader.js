@@ -22,6 +22,7 @@ export async function readAndStore(devices, type = 'realtime') {
       return;
     }
     for (const device of enabledDevices) {
+      console.log(device);
       try {
         client.setID(device.slaveId); // even if same, safe to repeat
 
@@ -31,7 +32,9 @@ export async function readAndStore(devices, type = 'realtime') {
             reg.address,
             reg.length
           );
-          data[reg.name] = res.data[0];
+          data[reg.name] = res.data[0] * 0.1;
+
+          console.log('res=>', res.data);
         }
 
         const payload = {
@@ -52,7 +55,7 @@ export async function readAndStore(devices, type = 'realtime') {
           await HistoricalData.create(payload);
         }
 
-        console.log(payload.device, 'Temp->',payload.data.temperature);
+        console.log(payload.device, 'Temp->', payload.data.temperature);
       } catch (err) {
         //FIXME: uncomment the modbus errors
         console.error(`Error reading ${device.name}:`, err.message);

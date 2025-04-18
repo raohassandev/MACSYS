@@ -4,6 +4,8 @@ const registerSchema = new mongoose.Schema({
   name: String,
   address: Number,
   length: Number,
+  scaleFactor: Number,
+  decimalPoint: Number,
 });
 
 const deviceSchema = new mongoose.Schema({
@@ -14,7 +16,8 @@ const deviceSchema = new mongoose.Schema({
   registers: [registerSchema],
   enabled: Boolean,
   setpoint: Number,
-  control: String
+  control: String,
+  status: Boolean
 });
 
 export default mongoose.model('Device', deviceSchema);

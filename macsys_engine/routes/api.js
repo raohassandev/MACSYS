@@ -43,7 +43,7 @@ router.get('/getDevices', async (req, res) => {
 // Update a device
 router.put('/updateDevice', async (req, res) => {
   try {
-    console.log("UPDATE => ",req.body._id)
+    console.log("UPDATE => ",req.body)
     const updatedDevice = await Device.findByIdAndUpdate(
       req.body._id,
       req.body,
