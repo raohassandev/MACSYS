@@ -1,0 +1,12 @@
+[
+  {
+    "name": "meetingRoom",
+    "ip": "192.168.1.111",
+    "port": 502,
+    "slaveId": 1,
+    "registers": [
+      { "name": "temperature", "address": 512, "length": 2 },
+      { "name": "humidity", "address": 514, "length": 2 }
+    ]
+  }
+]

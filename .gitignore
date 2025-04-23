@@ -31,6 +31,42 @@ macysys-engine/.vscode/ # VSCode settings, but you might want to commit some
 macysys-engine//build
 
 
+
+# Engine Ts
+
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# Compiled output
+macysys-engine_ts/dist/
+macysys-engine_ts/build/
+macysys-engine_ts/out/
+macysys-engine_ts/bundle/
+
+# Dependencies
+macysys-engine_ts/node_modules/
+macysys-engine_ts//bower_components
+macysys-engine_ts/jspm_packages/
+macysys-engine_ts/yarn-berry/
+
+# Logs
+logs*
+*.log
+macysys-engine_ts/npm-debug.log*
+macysys-engine_ts/yarn-debug.log*
+macysys-engine_ts/yarn-error.log*
+macysys-engine_ts/lerna-debug.log*
+macysys-engine_ts/.pnpm-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+macysys-engine_ts/report.*.json
+
+
+macysys-engine_ts/.vscode/ # VSCode settings, but you might want to commit some
+macysys-engine_ts//build
+
+
+
+
 # Web
 
 
