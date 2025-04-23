@@ -10,10 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.4",
     "axios": "^1.8.4",
     "framer-motion": "^12.7.3",
     "lucide-react": "^0.488.0",
     "react": "^19.0.0",
+    "react-apexcharts": "^1.7.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {

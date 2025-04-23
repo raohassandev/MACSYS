@@ -2,8 +2,32 @@ import HistoricalData from '../models/HistoricalData.js';
 import ModbusRTU from 'modbus-serial';
 import RealtimeData from '../models/RealtimeData.js';
 
+//for swapping bytes
+function parseModbusFloat(data) {
+  if (!Array.isArray(data) || data.length < 2) {
+    throw new Error('Need at least 2 registers for float');
+  }
+
+  const reg1 = data[0];
+  const reg2 = data[1];
+
+  const byteA = (reg1 >> 8) & 0xFF;
+  const byteB = reg1 & 0xFF;
+  const byteC = (reg2 >> 8) & 0xFF;
+  const byteD = reg2 & 0xFF;
+
+  // Byte-swapped float: B, A, D, C
+  const buffer = Buffer.from([byteB, byteA, byteD, byteC]);
+
+  return buffer.readFloatBE(); // or readFloatLE() depending on device
+}
+
+
+
 export async function readAndStore(devices, type = 'realtime') {
   const enabledDevices = devices.filter((d) => d.enabled);
+
+  // console.log(devices[0]);
 
   const client = new ModbusRTU();
   let isConnected = false;
@@ -23,7 +47,7 @@ export async function readAndStore(devices, type = 'realtime') {
       return;
     }
     for (const device of enabledDevices) {
-      console.log(device);
+      // console.log(device.registers);
       try {
         client.setID(device.slaveId); // even if same, safe to repeat
 
@@ -33,21 +57,24 @@ export async function readAndStore(devices, type = 'realtime') {
             reg.address,
             reg.length
           );
-          data[reg.name] = res.data[0] * 0.1;
-
-          console.log('res=>', res.data);
+          const decimalPoint = reg.decimalPoint
+          data[reg.name] = (res.buffer.readFloatBE()).toFixed(decimalPoint); // Assuming the data is in float format
+         
         }
-
         const payload = {
           device: device.name,
           timestamp: new Date(),
-          data: data, 
+          data: data,
+          status: device.status,
+          control: device.control,
         };
+        // console.log("payload is", payload);
+       
 
         if (type === 'realtime') {
           await RealtimeData.findOneAndUpdate(
             { device: device.name },
-            payload,
+            payload, 
             {
               upsert: true,
             }
@@ -67,6 +94,6 @@ export async function readAndStore(devices, type = 'realtime') {
   } finally {
     try {
       await client.close();
-    } catch {}
+    } catch { }
   }
 }

@@ -9,6 +9,8 @@ export default function DeviceForm() {
   const [currentDeviceId, setCurrentDeviceId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState<boolean>(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string>();
+  
 
   const [devices, setDevices] = useState<Device[]>([]);
 
@@ -78,6 +80,7 @@ export default function DeviceForm() {
       errors.slaveId = 'Slave ID must be between 1 and 255';
     }
 
+
     // Validate registers
     const registerErrors: Record<string, Record<string, string>> = {};
 
@@ -87,6 +90,8 @@ export default function DeviceForm() {
       if (!register.name.trim()) {
         regErrors.name = 'Register name is required';
       }
+
+      
 
       if (register.address < 0) {
         regErrors.address = 'Address must be positive';
@@ -227,6 +232,7 @@ export default function DeviceForm() {
         console.log(res.data);
         fetchDevices();
       } catch (error) {
+        setError(error.response.data.message);
         console.log(error);
       }
     }
@@ -284,6 +290,7 @@ export default function DeviceForm() {
         const res = await API.delete(`/delete/${id}`);
         console.log(res.data);
         fetchDevices();
+       
       } catch (error) {
         console.log(error);
       }
@@ -309,6 +316,7 @@ export default function DeviceForm() {
           <h1 className='text-xl font-bold text-gray-800'>
             Modbus Devices Management
           </h1>
+          {error && <div className='text-red-500'>{error}</div>}
           <button
             onClick={() => setShowForm(!showForm)}
             className='px-4 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500'

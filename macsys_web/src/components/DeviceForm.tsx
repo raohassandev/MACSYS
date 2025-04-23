@@ -1,4 +1,3 @@
-import { Button, Card, Col, Form, Row } from 'react-bootstrap';
 import React, { useState } from 'react';
 
 type Register = {
@@ -33,66 +32,58 @@ const RegisterForm: React.FC<{
   onChange: (index: number, field: keyof Register, value: any) => void;
   onRemove: (index: number) => void;
 }> = ({ register, index, onChange, onRemove }) => (
-  <Card className='mb-3'>
-    <Card.Body>
-      <Row>
-        <Col md={3}>
-          <Form.Group controlId={`address-${index}`}>
-            <Form.Label>Address</Form.Label>
-            <Form.Control
-              type='number'
-              value={register.address}
-              onChange={(e) =>
-                onChange(index, 'address', Number(e.target.value))
-              }
-            />
-          </Form.Group>
-        </Col>
-        <Col md={3}>
-          <Form.Group controlId={`dataType-${index}`}>
-            <Form.Label>Data Type</Form.Label>
-            <Form.Select
-              value={register.dataType}
-              onChange={(e) => onChange(index, 'dataType', e.target.value)}
-            >
-              <option value='int16'>int16</option>
-              <option value='int32'>int32</option>
-              <option value='float'>float</option>
-            </Form.Select>
-          </Form.Group>
-        </Col>
-        <Col md={3}>
-          <Form.Group controlId={`scaleFactor-${index}`}>
-            <Form.Label>Scale Factor</Form.Label>
-            <Form.Control
-              type='number'
-              value={register.scaleFactor || 1}
-              onChange={(e) =>
-                onChange(index, 'scaleFactor', Number(e.target.value))
-              }
-            />
-          </Form.Group>
-        </Col>
-        <Col md={3}>
-          <Form.Group controlId={`decimalPoint-${index}`}>
-            <Form.Label>Decimal Point</Form.Label>
-            <Form.Control
-              type='number'
-              value={register.decimalPoint || 0.1}
-              onChange={(e) =>
-                onChange(index, 'decimalPoint', Number(e.target.value))
-              }
-            />
-          </Form.Group>
-        </Col>
-      </Row>
-      <div className='text-end mt-2'>
-        <Button variant='danger' size='sm' onClick={() => onRemove(index)}>
-          Remove
-        </Button>
+  <div className="mb-4 bg-white rounded-lg shadow p-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+        <input
+          type="number"
+          value={register.address}
+          onChange={(e) => onChange(index, 'address', Number(e.target.value))}
+          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
       </div>
-    </Card.Body>
-  </Card>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Data Type</label>
+        <select
+          value={register.dataType}
+          onChange={(e) => onChange(index, 'dataType', e.target.value)}
+          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="int16">int16</option>
+          <option value="int32">int32</option>
+          <option value="float">float</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Scale Factor</label>
+        <input
+          type="number"
+          value={register.scaleFactor || 1}
+          onChange={(e) => onChange(index, 'scaleFactor', Number(e.target.value))}
+          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Decimal Point</label>
+        <input
+          type="number"
+          value={register.decimalPoint || 0}
+          onChange={(e) => onChange(index, 'decimalPoint', Number(e.target.value))}
+          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+    </div>
+    <div className="mt-4 flex justify-end">
+      <button
+        type="button"
+        onClick={() => onRemove(index)}
+        className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+      >
+        Remove
+      </button>
+    </div>
+  </div>
 );
 
 const DeviceForm: React.FC = () => {
@@ -105,19 +96,14 @@ const DeviceForm: React.FC = () => {
     control: 'Remote',
     enabled: true,
     registers: [defaultRegister],
-    sf: 1,
-    decimal: 1,
+    status: true,
   });
 
   const handleChange = (field: keyof Device, value: any) => {
     setDevice({ ...device, [field]: value });
   };
 
-  const handleRegisterChange = (
-    index: number,
-    field: keyof Register,
-    value: any
-  ) => {
+  const handleRegisterChange = (index: number, field: keyof Register, value: any) => {
     const updated = [...device.registers];
     updated[index][field] = value;
     setDevice({ ...device, registers: updated });
@@ -140,149 +126,90 @@ const DeviceForm: React.FC = () => {
   };
 
   return (
-    <Form onSubmit={handleSubmit}>
-      <Card className='mb-4'>
-        <Card.Body>
-          <Row>
-            <Col md={4}>
-              <Form.Group controlId='deviceName'>
-                <Form.Label>Device Name</Form.Label>
-                <Form.Control
-                  type='text'
-                  value={device.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group controlId='ip'>
-                <Form.Label>IP Address</Form.Label>
-                <Form.Control
-                  type='text'
-                  value={device.ip}
-                  onChange={(e) => handleChange('ip', e.target.value)}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group controlId='port'>
-                <Form.Label>Port</Form.Label>
-                <Form.Control
-                  type='number'
-                  value={device.port}
-                  onChange={(e) => handleChange('port', Number(e.target.value))}
-                />
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group controlId='setpoint'>
-                <Form.Label>Set Point</Form.Label>
-                <Form.Control
-                  type='number'
-                  value={device.setpoint}
-                  onChange={(e) =>
-                    handleChange('setpoint', Number(e.target.value))
-                  }
-                />
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group controlId='status'>
-                <Form.Label>Status</Form.Label>
-                <div>
-                  <span
-                    className={`badge ${
-                      device.status ? 'bg-success' : 'bg-secondary'
-                    }`}
-                  >
-                    {device.status ? 'Running' : 'Not Running'}
-                  </span>
-                </div>
-              </Form.Group>
-            </Col>
-          </Row>
-          <Row className='mt-3'>
-            <Col md={3}>
-              <Form.Group controlId='slaveId'>
-                <Form.Label>Slave ID</Form.Label>
-                <Form.Control
-                  type='number'
-                  value={device.slaveId}
-                  onChange={(e) =>
-                    handleChange('slaveId', Number(e.target.value))
-                  }
-                />
-              </Form.Group>
-            </Col>
-            <Col md={3}>
-              <Form.Group controlId='setpoint'>
-                <Form.Label>Setpoint</Form.Label>
-                <Form.Control
-                  type='number'
-                  value={device.setpoint}
-                  onChange={(e) =>
-                    handleChange('setpoint', Number(e.target.value))
-                  }
-                />
-              </Form.Group>
-            </Col>
-            {/* <Col md={3}>
-              <Form.Group controlId='sf'>
-                <Form.Label>Scale Factor (sf)</Form.Label>
-                <Form.Control
-                  type='number'
-                  value={device.scalefactor}
-                  onChange={(e) => handleChange('sf', Number(e.target.value))}
-                />
-              </Form.Group>
-            </Col> */}
-            {/* <Col md={3}>
-              <Form.Group controlId='decimal'>
-                <Form.Label>Decimal Point</Form.Label>
-                <Form.Control
-                  type='number'
-                  value={device.decimal}
-                  onChange={(e) =>
-                    handleChange('decimal', Number(e.target.value))
-                  }
-                />
-              </Form.Group>
-            </Col> */}
-          </Row>
+    <form onSubmit={handleSubmit} className="max-w-6xl mx-auto p-6">
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Device Name</label>
+            <input
+              type="text"
+              value={device.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">IP Address</label>
+            <input
+              type="text"
+              value={device.ip}
+              onChange={(e) => handleChange('ip', e.target.value)}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Port</label>
+            <input
+              type="number"
+              value={device.port}
+              onChange={(e) => handleChange('port', Number(e.target.value))}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Set Point</label>
+            <input
+              type="number"
+              value={device.setpoint}
+              onChange={(e) => handleChange('setpoint', Number(e.target.value))}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <div className="mt-1">
+              <span className={`inline-block px-3 py-1 rounded-full text-sm ${
+                device.status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {device.status ? 'Running' : 'Not Running'}
+              </span>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Slave ID</label>
+            <input
+              type="number"
+              value={device.slaveId}
+              onChange={(e) => handleChange('slaveId', Number(e.target.value))}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Control</label>
+            <select
+              value={device.control}
+              onChange={(e) => handleChange('control', e.target.value as 'Remote' | 'Local')}
+              className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="Remote">Remote</option>
+              <option value="Local">Local</option>
+            </select>
+          </div>
+          <div className="flex items-center mt-6">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={device.enabled}
+                onChange={(e) => handleChange('enabled', e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="text-sm text-gray-700">Enabled</span>
+            </label>
+          </div>
+        </div>
+      </div>
 
-          <Row className='mt-3'>
-            <Col md={4}>
-              <Form.Group controlId='control'>
-                <Form.Label>Control</Form.Label>
-                <Form.Select
-                  value={device.control}
-                  onChange={(e) =>
-                    handleChange(
-                      'control',
-                      e.target.value as 'Remote' | 'Local'
-                    )
-                  }
-                >
-                  <option value='Remote'>Remote</option>
-                  <option value='Local'>Local</option>
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group controlId='enabled' className='mt-4'>
-                <Form.Check
-                  type='checkbox'
-                  label='Enabled'
-                  checked={device.enabled}
-                  onChange={(e) => handleChange('enabled', e.target.checked)}
-                />
-              </Form.Group>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
-
-      <h5>Registers</h5>
+      <h3 className="text-lg font-medium text-gray-900 mb-4">Registers</h3>
       {device.registers.map((reg, idx) => (
         <RegisterForm
           key={idx}
@@ -293,16 +220,23 @@ const DeviceForm: React.FC = () => {
         />
       ))}
 
-      <Button variant='secondary' onClick={addRegister} className='mb-3'>
+      <button
+        type="button"
+        onClick={addRegister}
+        className="mb-6 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
         Add Register
-      </Button>
+      </button>
 
-      <div className='text-end'>
-        <Button variant='primary' type='submit'>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
           Save Device
-        </Button>
+        </button>
       </div>
-    </Form>
+    </form>
   );
 };
 
