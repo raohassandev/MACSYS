@@ -1,11 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { z } from "zod";
-import {
-  deviceInsertSchema,
-  registerInsertSchema,
-} from "@shared/schema";
+import { storage } from "./storage.js";
 import { writeToRegister } from "./controllers/modbusWriter";
 import { updateDeviceCache } from "./utils/configCache";
 
@@ -52,18 +47,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add new device
   app.post(`${apiPrefix}/devices`, async (req, res) => {
     try {
-      const validatedData = deviceInsertSchema.parse(req.body);
-      const newDevice = await storage.createDevice(validatedData);
+      const deviceData = req.body;
+      const newDevice = await storage.createDevice(deviceData);
       
       // Update the device cache after adding a new device
       await updateDeviceCache();
       
       res.status(201).json(newDevice);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ errors: error.errors });
-      }
       console.error("Error creating device:", error);
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(500).json({ message: "Failed to create device" });
     }
   });
@@ -71,13 +66,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update device
   app.put(`${apiPrefix}/devices/:id`, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
+      const id = req.params.id;
+      if (!id) {
         return res.status(400).json({ message: "Invalid device ID" });
       }
       
-      const validatedData = deviceInsertSchema.partial().parse(req.body);
-      const updatedDevice = await storage.updateDevice(id, validatedData);
+      const updateData = req.body;
+      const updatedDevice = await storage.updateDevice(id, updateData);
       
       if (!updatedDevice) {
         return res.status(404).json({ message: "Device not found" });
@@ -88,10 +83,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedDevice);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ errors: error.errors });
-      }
       console.error("Error updating device:", error);
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(500).json({ message: "Failed to update device" });
     }
   });
