@@ -1,5 +1,5 @@
-import { Device } from "@shared/schema";
-import { storage } from "../storage";
+import { Device } from "../models/device.js";
+import { storage } from "../storage.js";
 
 // Cache of device configurations
 let deviceCache: Device[] = [];

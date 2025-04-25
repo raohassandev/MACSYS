@@ -139,8 +139,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add register to device
   app.post(`${apiPrefix}/devices/:id/registers`, async (req, res) => {
     try {
-      const deviceId = parseInt(req.params.id);
-      if (isNaN(deviceId)) {
+      const deviceId = req.params.id;
+      if (!deviceId) {
         return res.status(400).json({ message: "Invalid device ID" });
       }
       
@@ -150,18 +150,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const registerData = { ...req.body, deviceId };
-      const validatedData = registerInsertSchema.parse(registerData);
-      const newRegister = await storage.createRegister(validatedData);
+      const newRegister = await storage.createRegister(registerData);
       
       // Update the device cache after adding a register
       await updateDeviceCache();
       
       res.status(201).json(newRegister);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ errors: error.errors });
-      }
       console.error("Error creating register:", error);
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(500).json({ message: "Failed to create register" });
     }
   });
@@ -242,8 +241,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get latest real-time data for a device
   app.get(`${apiPrefix}/devices/:id/latest`, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
+      const id = req.params.id;
+      if (!id) {
         return res.status(400).json({ message: "Invalid device ID" });
       }
       
@@ -263,8 +262,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get historical data for a device
   app.get(`${apiPrefix}/devices/:id/history`, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
+      const id = req.params.id;
+      if (!id) {
         return res.status(400).json({ message: "Invalid device ID" });
       }
       
