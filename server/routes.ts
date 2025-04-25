@@ -19,7 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const devices = await storage.getAllDevices();
       res.json(devices);
     } catch (error) {
-      console.error("Error getting devices:", error);
+      console.error("Error getting devices:", error instanceof Error ? error.message : "Unknown error");
       res.status(500).json({ message: "Failed to get devices" });
     }
   });
@@ -55,8 +55,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(newDevice);
     } catch (error) {
-      console.error("Error creating device:", error);
-      if (error.name === 'ValidationError') {
+      console.error("Error creating device:", error instanceof Error ? error.message : "Unknown error");
+      if (error instanceof Error && error.name === 'ValidationError') {
         return res.status(400).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to create device" });
@@ -83,8 +83,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedDevice);
     } catch (error) {
-      console.error("Error updating device:", error);
-      if (error.name === 'ValidationError') {
+      console.error("Error updating device:", error instanceof Error ? error.message : "Unknown error");
+      if (error instanceof Error && error.name === 'ValidationError') {
         return res.status(400).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to update device" });
@@ -94,8 +94,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete device
   app.delete(`${apiPrefix}/devices/:id`, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
+      const id = req.params.id;
+      if (!id) {
         return res.status(400).json({ message: "Invalid device ID" });
       }
       
@@ -110,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ message: "Device deleted successfully" });
     } catch (error) {
-      console.error("Error deleting device:", error);
+      console.error("Error deleting device:", error instanceof Error ? error.message : "Unknown error");
       res.status(500).json({ message: "Failed to delete device" });
     }
   });
@@ -118,8 +118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get registers for a device
   app.get(`${apiPrefix}/devices/:id/registers`, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
+      const id = req.params.id;
+      if (!id) {
         return res.status(400).json({ message: "Invalid device ID" });
       }
       
@@ -131,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const registers = await storage.getRegistersForDevice(id);
       res.json(registers);
     } catch (error) {
-      console.error("Error getting registers:", error);
+      console.error("Error getting registers:", error instanceof Error ? error.message : "Unknown error");
       res.status(500).json({ message: "Failed to get registers" });
     }
   });
@@ -157,8 +157,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(201).json(newRegister);
     } catch (error) {
-      console.error("Error creating register:", error);
-      if (error.name === 'ValidationError') {
+      console.error("Error creating register:", error instanceof Error ? error.message : "Unknown error");
+      if (error instanceof Error && error.name === 'ValidationError') {
         return res.status(400).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to create register" });
@@ -254,7 +254,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = await storage.getLatestRealtimeData(id);
       res.json(data);
     } catch (error) {
-      console.error("Error getting latest data:", error);
+      console.error("Error getting latest data:", error instanceof Error ? error.message : "Unknown error");
       res.status(500).json({ message: "Failed to get latest data" });
     }
   });
@@ -283,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = await storage.getHistoricalData(id, startTime, endTime);
       res.json(data);
     } catch (error) {
-      console.error("Error getting historical data:", error);
+      console.error("Error getting historical data:", error instanceof Error ? error.message : "Unknown error");
       res.status(500).json({ message: "Failed to get historical data" });
     }
   });
