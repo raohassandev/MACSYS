@@ -9,7 +9,7 @@ import { Loader2, Download, BarChart2, LineChart as LineChartIcon, Calendar } fr
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Device } from "@/types";
 import { format, subDays, subMonths, subYears, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
-import { useReportData } from "@/hooks/useReportData";
+import { useHistoricalData } from "@/hooks/useHistoricalData";
 
 export default function Reports() {
   const { data: devices, isLoading: isLoadingDevices } = useDevices();
@@ -23,11 +23,10 @@ export default function Reports() {
   // Calculate date range based on report type
   const dateRange = calculateDateRange(reportType, selectedDate);
   
-  const { data: reportData, isLoading: isLoadingReportData, refetch } = useReportData(
+  const { data: reportData, isLoading: isLoadingReportData, refetch } = useHistoricalData(
     selectedDevice,
     dateRange.startDate,
-    dateRange.endDate,
-    reportType
+    dateRange.endDate
   );
   
   // Update the selected device object when the device ID changes
@@ -106,7 +105,7 @@ export default function Reports() {
               </label>
               <DatePicker
                 date={selectedDate}
-                setDate={setSelectedDate}
+                setDate={(date) => date && setSelectedDate(date)}
               />
             </div>
             
