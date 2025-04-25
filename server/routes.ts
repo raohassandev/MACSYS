@@ -256,6 +256,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to get latest data" });
     }
   });
+  
+  // Alias for latest data (matches frontend expectations)
+  app.get(`${apiPrefix}/devices/:id/data`, async (req, res) => {
+    try {
+      const id = req.params.id;
+      if (!id) {
+        return res.status(400).json({ message: "Invalid device ID" });
+      }
+      
+      const device = await storage.getDeviceById(id);
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      const data = await storage.getLatestRealtimeData(id);
+      res.json(data);
+    } catch (error) {
+      console.error("Error getting data:", error instanceof Error ? error.message : "Unknown error");
+      res.status(500).json({ message: "Failed to get data" });
+    }
+  });
 
   // Get historical data for a device
   app.get(`${apiPrefix}/devices/:id/history`, async (req, res) => {
