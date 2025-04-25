@@ -9,15 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import RegisterTable from "./RegisterTable";
+import RegistersPanel from "./RegistersPanel";
 import DataVisualization from "./DataVisualization";
-import { Device } from "@shared/schema";
+import { Device } from "@/types";
 
 export default function DeviceDetailView() {
   const { id } = useParams<{ id: string }>();
-  const deviceId = parseInt(id);
   
-  const { data: device, isLoading: isDeviceLoading, error } = useDevice(deviceId);
-  const { data: latestData, isLoading: isDataLoading } = useRegisterData(deviceId);
+  const { data: device, isLoading: isDeviceLoading, error } = useDevice(id);
+  const { data: latestData, isLoading: isDataLoading } = useRegisterData(id);
   
   const [activeTab, setActiveTab] = useState("overview");
   
@@ -95,11 +95,11 @@ export default function DeviceDetailView() {
             </TabsContent>
             
             <TabsContent value="registers">
-              <RegisterTable deviceId={deviceId} />
+              {device && <RegistersPanel device={device} />}
             </TabsContent>
             
             <TabsContent value="visualization">
-              <DataVisualization deviceId={deviceId} />
+              <DataVisualization deviceId={id} />
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -135,8 +135,8 @@ function DeviceInfoCard({ device }: DeviceInfoCardProps) {
             <td>{device.deviceType}</td>
           </tr>
           <tr>
-            <td className="text-gray-400 py-1">Created At:</td>
-            <td>{new Date(device.createdAt).toLocaleString()}</td>
+            <td className="text-gray-400 py-1">Status:</td>
+            <td>{device.status ? "Connected" : "Disconnected"}</td>
           </tr>
         </tbody>
       </table>

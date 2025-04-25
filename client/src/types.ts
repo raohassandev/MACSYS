@@ -1,10 +1,10 @@
-// Define types for client components to use
-
 export interface Register {
   id?: string;
   name: string;
   address: number;
   length?: number;
+  scaleFactor?: number;
+  decimalPoint?: number;
   dataType?: string;
   unit?: string;
   readOnly?: boolean;

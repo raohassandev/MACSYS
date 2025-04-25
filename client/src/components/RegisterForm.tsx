@@ -30,9 +30,10 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Register } from "@/types";
 
 // Form schema for register
-const registerSchema = z.object({
+const registerFormSchema = z.object({
   name: z.string().min(1, "Register name is required"),
   address: z.string().transform((val) => parseInt(val, 10))
     .refine((val) => !isNaN(val) && val >= 0, "Address must be a non-negative number"),
@@ -46,13 +47,13 @@ const registerSchema = z.object({
   byteOrder: z.string().optional(),
 });
 
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
 interface RegisterFormProps {
   open: boolean;
   onClose: () => void;
   deviceId: string;
-  existingRegister?: RegisterFormValues;
+  existingRegister?: Register;
   isEdit?: boolean;
 }
 
@@ -66,16 +67,26 @@ export default function RegisterForm({
   const { toast } = useToast();
   
   const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: existingRegister || {
-      name: "",
-      address: "0",
-      length: "2",
-      scaleFactor: "1",
-      decimalPoint: "2",
-      dataType: "float",
-      byteOrder: "AB CD",
-    },
+    resolver: zodResolver(registerFormSchema),
+    defaultValues: existingRegister 
+      ? {
+          name: existingRegister.name,
+          address: existingRegister.address.toString(),
+          length: existingRegister.length?.toString() || "2",
+          scaleFactor: existingRegister.scaleFactor?.toString() || "1",
+          decimalPoint: existingRegister.decimalPoint?.toString() || "2",
+          dataType: existingRegister.dataType || "float",
+          byteOrder: existingRegister.byteOrder || "AB CD",
+        }
+      : {
+          name: "",
+          address: "0",
+          length: "2",
+          scaleFactor: "1",
+          decimalPoint: "2",
+          dataType: "float",
+          byteOrder: "AB CD",
+        },
   });
   
   const onSubmit = async (data: RegisterFormValues) => {

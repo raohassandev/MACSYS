@@ -59,7 +59,7 @@ export default function RegistersPanel({ device }: RegistersPanelProps) {
     queryKey: [`/api/devices/${device.id}/registers`],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/devices/${device.id}/registers`);
-      return response as Register[];
+      return response as unknown as Register[];
     },
   });
   
