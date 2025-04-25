@@ -80,15 +80,26 @@ interface AddDeviceModalProps {
 export default function AddDeviceModal({ open, onClose }: AddDeviceModalProps) {
   const { toast } = useToast();
   const [deviceType, setDeviceType] = useState<"tcp" | "rtu">("tcp");
-  const [registers, setRegisters] = useState<RegisterFormValues[]>([{
-    name: "Temperature",
-    address: "0",
-    length: "1",
-    scaleFactor: "1",
-    decimalPoint: "2",
-    byteOrder: "AB CD",
-    dataType: "float"
-  }]);
+  const [registers, setRegisters] = useState<RegisterFormValues[]>([
+    {
+      name: "Setpoint", // Setpoint register is required for device control
+      address: "1013",
+      length: "2",
+      scaleFactor: "1",
+      decimalPoint: "2",
+      byteOrder: "AB CD",
+      dataType: "float"
+    },
+    {
+      name: "Temperature",
+      address: "2613",
+      length: "2",
+      scaleFactor: "1",
+      decimalPoint: "2",
+      byteOrder: "AB CD",
+      dataType: "float"
+    }
+  ]);
   const [enabled, setEnabled] = useState(true);
   
   const form = useForm<DeviceFormValues>({
@@ -133,13 +144,46 @@ export default function AddDeviceModal({ open, onClose }: AddDeviceModalProps) {
     setRegisters(updatedRegisters);
   };
   
+  // Check if a register named 'setpoint' exists in the registers array
+  const hasSetpointRegister = () => {
+    return registers.some(reg => 
+      reg.name.toLowerCase().trim() === 'setpoint'
+    );
+  };
+  
+  // Validate that all registers must have the required fields filled
+  const validateRegisters = () => {
+    if (registers.length === 0) {
+      return "At least one register is required";
+    }
+    
+    if (!hasSetpointRegister()) {
+      return "A register named 'setpoint' is required for device control";
+    }
+    
+    for (const reg of registers) {
+      if (!reg.name || reg.name.trim() === '') {
+        return "All registers must have a name";
+      }
+      if (!reg.address || reg.address.trim() === '') {
+        return "All registers must have an address";
+      }
+      if (!reg.length || reg.length.trim() === '') {
+        return "All registers must have a length";
+      }
+    }
+    
+    return null;
+  };
+  
   const onSubmit = async (data: DeviceFormValues) => {
     try {
       // Validate registers
-      if (registers.length === 0) {
+      const validationError = validateRegisters();
+      if (validationError) {
         toast({
           title: "Validation Error",
-          description: "At least one register is required",
+          description: validationError,
           variant: "destructive",
         });
         return;
