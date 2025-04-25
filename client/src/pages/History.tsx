@@ -116,11 +116,13 @@ export default function History() {
                   <SelectValue placeholder="Select a device" />
                 </SelectTrigger>
                 <SelectContent>
-                  {devices?.map((device) => (
-                    <SelectItem key={device.id} value={device.id.toString()}>
+                  {devices && devices.length > 0 ? devices.map((device) => (
+                    <SelectItem key={device.id} value={device.id}>
                       {device.name}
                     </SelectItem>
-                  ))}
+                  )) : (
+                    <SelectItem value="no-devices" disabled>No devices available</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>

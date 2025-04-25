@@ -14,10 +14,29 @@ interface DataVisualizationProps {
 export default function DataVisualization({ deviceId }: DataVisualizationProps) {
   const { data: device, isLoading: isDeviceLoading } = useDevice(deviceId);
   const [timeRange, setTimeRange] = useState<"1h" | "24h" | "7d">("24h");
-  const { data: historicalData, isLoading: isHistoricalLoading } = useHistoricalData({
+  
+  // Calculate start date based on time range
+  const endDate = new Date();
+  const startDate = new Date();
+  
+  switch (timeRange) {
+    case "1h":
+      startDate.setHours(startDate.getHours() - 1);
+      break;
+    case "7d":
+      startDate.setDate(startDate.getDate() - 7);
+      break;
+    case "24h":
+    default:
+      startDate.setDate(startDate.getDate() - 1);
+      break;
+  }
+  
+  const { data: historicalData, isLoading: isHistoricalLoading } = useHistoricalData(
     deviceId,
-    timeRange
-  });
+    startDate,
+    endDate
+  );
   
   if (isDeviceLoading || isHistoricalLoading) {
     return <DataVisualizationSkeleton />;

@@ -20,8 +20,8 @@ export function useHistoricalData(deviceId: string, startDate?: Date, endDate?: 
         endDate: endDate.toISOString()
       });
 
-      const data = await apiRequest('GET', `/api/historical-data?${params.toString()}`);
-      return data as HistoricalData[];
+      // Use the generic parameter to specify the expected return type
+      return apiRequest<HistoricalData[]>('GET', `/api/historical-data?${params.toString()}`);
     },
     enabled: Boolean(deviceId && startDate && endDate),
     refetchOnWindowFocus: false
