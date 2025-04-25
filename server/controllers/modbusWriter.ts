@@ -53,7 +53,11 @@ export async function writeToRegister(device: any, registerName: string, value: 
     // For float values (assuming most values are floats)
     if (register.length === 2) {
       // Convert the float value to the correct format for Modbus
-      const registers = Float32toBytes(value as number, "big");
+      // Use the register's byteOrder if available, otherwise default to "big"
+      const byteOrder = register.byteOrder || "big";
+      console.log(`Using byte order: ${byteOrder} for register ${registerName}`);
+      
+      const registers = Float32toBytes(value as number, byteOrder);
       
       // Write the registers
       await client.writeRegisters(register.address, registers);
@@ -97,8 +101,10 @@ async function findRegisterByAddress(registerName: string): Promise<{ address: n
       if (device.registers && device.registers.length > 0) {
         for (const register of device.registers) {
           if (register.name.toLowerCase() === registerName.toLowerCase()) {
+            // Ensure address is a number or default to 0
+            const address = typeof register.address === 'number' ? register.address : 0;
             return {
-              address: register.address,
+              address: address,
               length: register.length || 2,
               byteOrder: register.byteOrder || 'big'
             };
