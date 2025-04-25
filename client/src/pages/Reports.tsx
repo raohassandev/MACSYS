@@ -545,11 +545,128 @@ function exportReportAsCsv(data: any[], dataKeys: string[], reportType: string, 
   
   // Create blob and download
   const blob = new Blob([csvContent.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', `${reportType}_report_${deviceName}_${format(selectedDate, 'yyyy-MM-dd')}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const fileName = `${reportType}_report_${deviceName}_${format(selectedDate, 'yyyy-MM-dd')}.csv`;
+  saveAs(blob, fileName);
+}
+
+// Helper function to export data as PDF
+function exportReportAsPdf(data: any[], dataKeys: string[], reportType: string, selectedDate: Date, deviceName: string) {
+  if (!data || data.length === 0) return;
+  
+  // Create new PDF document
+  const doc = new jsPDF();
+  
+  // Add title
+  const title = `${reportType.charAt(0).toUpperCase() + reportType.slice(1)} Report: ${getReportTitle(reportType as "daily" | "weekly" | "monthly" | "yearly", selectedDate)}`;
+  doc.setFontSize(16);
+  doc.text(title, 14, 22);
+  
+  // Add subtitle
+  const subtitle = `Device: ${deviceName}`;
+  doc.setFontSize(12);
+  doc.text(subtitle, 14, 30);
+  
+  // Add date range
+  const dateRange = calculateDateRange(reportType as "daily" | "weekly" | "monthly" | "yearly", selectedDate);
+  const dateRangeText = `Date Range: ${dateRange.startDate.toLocaleDateString()} to ${dateRange.endDate.toLocaleDateString()}`;
+  doc.text(dateRangeText, 14, 36);
+  
+  // Format data for table
+  const tableData = data.map(item => {
+    const row: any[] = [item.label];
+    dataKeys.forEach(key => {
+      row.push(item[key] !== undefined ? formatNumber(item[key]) : "");
+    });
+    return row;
+  });
+  
+  // Create table
+  (doc as any).autoTable({
+    head: [["Time", ...dataKeys]],
+    body: tableData,
+    startY: 45,
+    theme: 'grid',
+    styles: {
+      fontSize: 10,
+      cellPadding: 3,
+    },
+    headStyles: {
+      fillColor: [41, 128, 185],
+      textColor: 255,
+      fontStyle: 'bold',
+    },
+    alternateRowStyles: {
+      fillColor: [245, 245, 245]
+    }
+  });
+  
+  // Add summary section
+  const summaryStartY = (doc as any).lastAutoTable.finalY + 15;
+  doc.setFontSize(14);
+  doc.text("Summary Statistics", 14, summaryStartY);
+  
+  // Calculate and display summary statistics
+  let summaryY = summaryStartY + 10;
+  dataKeys.forEach(key => {
+    const values = data.map(item => item[key] || 0).filter(val => !isNaN(val));
+    const avg = values.length ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
+    const min = values.length ? Math.min(...values) : 0;
+    const max = values.length ? Math.max(...values) : 0;
+    
+    doc.setFontSize(12);
+    doc.text(`${key}:`, 14, summaryY);
+    doc.setFontSize(10);
+    doc.text(`Min: ${formatNumber(min)} | Avg: ${formatNumber(avg)} | Max: ${formatNumber(max)}`, 35, summaryY);
+    
+    summaryY += 8;
+  });
+  
+  // Save the PDF file
+  const fileName = `${reportType}_report_${deviceName}_${format(selectedDate, 'yyyy-MM-dd')}.pdf`;
+  doc.save(fileName);
+}
+
+// Helper function to export data as Excel
+function exportReportAsExcel(data: any[], dataKeys: string[], reportType: string, selectedDate: Date, deviceName: string) {
+  if (!data || data.length === 0) return;
+  
+  // Create a new workbook
+  const wb = XLSX.utils.book_new();
+  
+  // Format data for worksheet
+  const wsData = [
+    ["Time", ...dataKeys], // Header row
+    ...data.map(item => {
+      const row: any[] = [item.label];
+      dataKeys.forEach(key => {
+        row.push(item[key] !== undefined ? item[key] : "");
+      });
+      return row;
+    })
+  ];
+  
+  // Create summary statistics
+  wsData.push([]);
+  wsData.push(["Summary Statistics"]);
+  
+  dataKeys.forEach(key => {
+    const values = data.map(item => item[key] || 0).filter(val => !isNaN(val));
+    const avg = values.length ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
+    const min = values.length ? Math.min(...values) : 0;
+    const max = values.length ? Math.max(...values) : 0;
+    
+    wsData.push([`${key}:`, `Min: ${formatNumber(min)}`, `Avg: ${formatNumber(avg)}`, `Max: ${formatNumber(max)}`]);
+  });
+  
+  // Create worksheet
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  
+  // Add worksheet to workbook
+  XLSX.utils.book_append_sheet(wb, ws, "Report");
+  
+  // Generate file name
+  const fileName = `${reportType}_report_${deviceName}_${format(selectedDate, 'yyyy-MM-dd')}.xlsx`;
+  
+  // Write and download the Excel file
+  XLSX.writeFile(wb, fileName);
 }
