@@ -23,14 +23,34 @@ export default function RegisterTable({ deviceId }: RegisterTableProps) {
     return <RegisterTableSkeleton />;
   }
   
-  // Example registers for now (would be provided by API in a real implementation)
-  const registers = [
-    { name: "Temperature", address: 40001, type: "Float", value: "24.5°C", lastUpdate: "2 seconds ago", readOnly: false },
-    { name: "Pressure", address: 40003, type: "Float", value: "3.2 bar", lastUpdate: "2 seconds ago", readOnly: false },
-    { name: "Valve Position", address: 40005, type: "Integer", value: "75%", lastUpdate: "2 seconds ago", readOnly: false },
-    { name: "Pump Status", address: 1, type: "Coil", value: "ON", lastUpdate: "2 seconds ago", readOnly: false },
-    { name: "Alarm Status", address: 10001, type: "Discrete Input", value: "OFF", lastUpdate: "2 seconds ago", readOnly: true },
-  ];
+  // Use actual registers from the device
+  const deviceRegisters = device?.registers || [];
+  const registerValues = latestData?.data || {};
+  
+  // Format the register data for display
+  const registers = deviceRegisters.map(register => {
+    const value = registerValues[register.name] !== undefined 
+      ? registerValues[register.name] 
+      : 'N/A';
+      
+    const formattedValue = typeof value === 'number' 
+      ? value.toFixed(register.decimalPoint || 2)
+      : value;
+      
+    return {
+      name: register.name,
+      address: register.address,
+      type: register.dataType || 'Float',
+      value: formattedValue,
+      byteOrder: register.byteOrder || 'big', // Display byte order
+      scaleFactor: register.scaleFactor || 1,
+      decimalPoint: register.decimalPoint || 2,
+      lastUpdate: latestData?.timestamp 
+        ? new Date(latestData.timestamp).toLocaleTimeString()
+        : 'N/A',
+      readOnly: register.name.toLowerCase() !== 'setpoint'
+    };
+  });
   
   const handleWriteRegister = (name: string, value: any, address: number) => {
     setSelectedRegister({ name, value, address });
@@ -50,6 +70,7 @@ export default function RegisterTable({ deviceId }: RegisterTableProps) {
               <th className="py-2 px-3 text-left">Name</th>
               <th className="py-2 px-3 text-left">Address</th>
               <th className="py-2 px-3 text-left">Type</th>
+              <th className="py-2 px-3 text-left">Byte Order</th>
               <th className="py-2 px-3 text-left">Value</th>
               <th className="py-2 px-3 text-left">Last Update</th>
               <th className="py-2 px-3 text-left">Actions</th>
@@ -61,6 +82,11 @@ export default function RegisterTable({ deviceId }: RegisterTableProps) {
                 <td className="py-2 px-3">{register.name}</td>
                 <td className="py-2 px-3 font-mono">{register.address}</td>
                 <td className="py-2 px-3">{register.type}</td>
+                <td className="py-2 px-3">
+                  <span className="px-2 py-1 bg-blue-900/30 text-blue-300 rounded text-xs font-mono">
+                    {register.byteOrder || "AB CD"}
+                  </span>
+                </td>
                 <td className="py-2 px-3 font-bold">{register.value}</td>
                 <td className="py-2 px-3 text-xs">{register.lastUpdate}</td>
                 <td className="py-2 px-3">
@@ -107,7 +133,7 @@ function RegisterTableSkeleton() {
         <table className="min-w-full">
           <thead className="bg-muted">
             <tr>
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+              {[1, 2, 3, 4, 5, 6, 7].map((i) => ( // Added one more for byte order column
                 <th key={i} className="py-2 px-3">
                   <Skeleton className="h-4 w-16" />
                 </th>
@@ -117,7 +143,7 @@ function RegisterTableSkeleton() {
           <tbody className="divide-y divide-gray-700">
             {[1, 2, 3, 4, 5].map((row) => (
               <tr key={row}>
-                {[1, 2, 3, 4, 5, 6].map((col) => (
+                {[1, 2, 3, 4, 5, 6, 7].map((col) => ( // Added one more for byte order column
                   <td key={`${row}-${col}`} className="py-2 px-3">
                     <Skeleton className="h-4 w-16" />
                   </td>

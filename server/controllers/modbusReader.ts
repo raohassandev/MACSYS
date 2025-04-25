@@ -137,9 +137,18 @@ async function readRegister(client: ModbusRTU, register: any): Promise<any> {
 }
 
 /**
- * Parses a 32-bit float from two 16-bit registers
+ * Parses a 32-bit float from two 16-bit registers with various byte order options
+ * 
+ * Supported byte orders:
+ * - "AB CD" (same as ABCD): MSW-MSB first, original Modbus format
+ * - "CD AB" (same as CDAB): LSW-MSB first, swapped register order
+ * - "BA DC" (same as BADC): MSW-LSB first, swapped bytes in each register
+ * - "DC BA" (same as DCBA): LSW-LSB first, swapped bytes and swapped registers
+ * - "big" (same as ABCD): Big endian format
+ * - "little" (same as DCBA): Little endian format
+ * 
  * @param data Array of two 16-bit values
- * @param byteOrder Byte order format (default: "big", also supports "little" and "AB CD")
+ * @param byteOrder Byte order format (default: "big")
  * @returns The parsed float value
  */
 function parseFloat32(data: number[], byteOrder: string = "big"): number {
@@ -147,43 +156,49 @@ function parseFloat32(data: number[], byteOrder: string = "big"): number {
     throw new Error('Expected exactly 2 registers for float32 data');
   }
   
+  // Normalize byte order format names
+  const normalizedByteOrder = byteOrder.toLowerCase().trim();
   const buffer = Buffer.alloc(4);
   
-  if (byteOrder === "AB CD") {
-    // AB CD format: First register contains the most significant word (bytes AB)
-    // Second register contains the least significant word (bytes CD)
+  // ABCD / AB CD (big endian with registers in order)
+  if (normalizedByteOrder === "ab cd" || normalizedByteOrder === "abcd" || normalizedByteOrder === "big") {
+    // First register (AB) contains the most significant word
+    // Second register (CD) contains the least significant word
     buffer.writeUInt16BE(data[0], 0); // AB goes to positions 0,1
     buffer.writeUInt16BE(data[1], 2); // CD goes to positions 2,3
     return buffer.readFloatBE(0);
-  } else if (byteOrder === "CD AB") {
-    // CD AB format: First register contains the least significant word (bytes CD)
-    // Second register contains the most significant word (bytes AB)
+  } 
+  // CDAB / CD AB (big endian with registers swapped)
+  else if (normalizedByteOrder === "cd ab" || normalizedByteOrder === "cdab") {
+    // First register (CD) contains the least significant word
+    // Second register (AB) contains the most significant word
     buffer.writeUInt16BE(data[1], 0); // AB goes to positions 0,1
     buffer.writeUInt16BE(data[0], 2); // CD goes to positions 2,3
     return buffer.readFloatBE(0);
-  } else if (byteOrder === "BA DC") {
-    // BA DC format: First register contains the most significant word with bytes swapped
-    // Second register contains the least significant word with bytes swapped
+  } 
+  // BADC / BA DC (little endian bytes but registers in order)
+  else if (normalizedByteOrder === "ba dc" || normalizedByteOrder === "badc") {
+    // First register contains most significant word with bytes swapped
+    // Second register contains least significant word with bytes swapped
     const reg1 = ((data[0] & 0xFF) << 8) | ((data[0] & 0xFF00) >> 8);
     const reg2 = ((data[1] & 0xFF) << 8) | ((data[1] & 0xFF00) >> 8);
     buffer.writeUInt16BE(reg1, 0);
     buffer.writeUInt16BE(reg2, 2);
     return buffer.readFloatBE(0);
-  } else if (byteOrder === "DC BA") {
-    // DC BA format: First register contains the least significant word with bytes swapped
-    // Second register contains the most significant word with bytes swapped
+  } 
+  // DCBA / DC BA (little endian bytes and registers swapped)
+  else if (normalizedByteOrder === "dc ba" || normalizedByteOrder === "dcba" || normalizedByteOrder === "little") {
+    // First register contains least significant word with bytes swapped
+    // Second register contains most significant word with bytes swapped
     const reg1 = ((data[1] & 0xFF) << 8) | ((data[1] & 0xFF00) >> 8);
     const reg2 = ((data[0] & 0xFF) << 8) | ((data[0] & 0xFF00) >> 8);
     buffer.writeUInt16BE(reg1, 0);
     buffer.writeUInt16BE(reg2, 2);
     return buffer.readFloatBE(0);
-  } else if (byteOrder === "little") {
-    // Little endian format (DCBA)
-    buffer.writeUInt16LE(data[0], 0);
-    buffer.writeUInt16LE(data[1], 2);
-    return buffer.readFloatLE(0);
-  } else {
-    // Default: Big endian format (ABCD)
+  } 
+  // Fallback to big endian (ABCD)
+  else {
+    console.warn(`Unrecognized byte order format: ${byteOrder}, falling back to ABCD (big endian)`);
     buffer.writeUInt16BE(data[0], 0);
     buffer.writeUInt16BE(data[1], 2);
     return buffer.readFloatBE(0);
@@ -191,21 +206,38 @@ function parseFloat32(data: number[], byteOrder: string = "big"): number {
 }
 
 /**
- * Float32 to bytes converter
+ * Float32 to bytes converter for writing to Modbus registers
+ * 
+ * Supported byte orders:
+ * - "AB CD" (same as ABCD): MSW-MSB first, original Modbus format
+ * - "CD AB" (same as CDAB): LSW-MSB first, swapped register order
+ * - "BA DC" (same as BADC): MSW-LSB first, swapped bytes in each register
+ * - "DC BA" (same as DCBA): LSW-LSB first, swapped bytes and swapped registers
+ * - "big" (same as ABCD): Big endian format
+ * - "little" (same as DCBA): Little endian format
+ * 
  * @param value The float value to convert
- * @param byteOrder Byte order format (default: "big", also supports "little" and "AB CD")
+ * @param byteOrder Byte order format (default: "big")
  * @returns Array of two 16-bit integers (Modbus registers)
  */
 export function Float32toBytes(value: number, byteOrder: string = "big"): number[] {
   const buffer = Buffer.alloc(4);
   
-  if (byteOrder === "AB CD" || byteOrder === "big") {
+  // Normalize byte order format names
+  const normalizedByteOrder = byteOrder.toLowerCase().trim();
+  
+  // ABCD / AB CD (big endian with registers in order)
+  if (normalizedByteOrder === "ab cd" || normalizedByteOrder === "abcd" || normalizedByteOrder === "big") {
     buffer.writeFloatBE(value, 0);
     return [buffer.readUInt16BE(0), buffer.readUInt16BE(2)];
-  } else if (byteOrder === "CD AB") {
+  } 
+  // CDAB / CD AB (big endian with registers swapped)
+  else if (normalizedByteOrder === "cd ab" || normalizedByteOrder === "cdab") {
     buffer.writeFloatBE(value, 0);
     return [buffer.readUInt16BE(2), buffer.readUInt16BE(0)];
-  } else if (byteOrder === "BA DC") {
+  } 
+  // BADC / BA DC (little endian bytes but registers in order)
+  else if (normalizedByteOrder === "ba dc" || normalizedByteOrder === "badc") {
     buffer.writeFloatBE(value, 0);
     const reg1 = buffer.readUInt16BE(0);
     const reg2 = buffer.readUInt16BE(2);
@@ -213,7 +245,9 @@ export function Float32toBytes(value: number, byteOrder: string = "big"): number
       ((reg1 & 0xFF) << 8) | ((reg1 & 0xFF00) >> 8),
       ((reg2 & 0xFF) << 8) | ((reg2 & 0xFF00) >> 8)
     ];
-  } else if (byteOrder === "DC BA") {
+  } 
+  // DCBA / DC BA (little endian bytes and registers swapped)
+  else if (normalizedByteOrder === "dc ba" || normalizedByteOrder === "dcba" || normalizedByteOrder === "little") {
     buffer.writeFloatBE(value, 0);
     const reg1 = buffer.readUInt16BE(0);
     const reg2 = buffer.readUInt16BE(2);
@@ -221,11 +255,10 @@ export function Float32toBytes(value: number, byteOrder: string = "big"): number
       ((reg2 & 0xFF) << 8) | ((reg2 & 0xFF00) >> 8),
       ((reg1 & 0xFF) << 8) | ((reg1 & 0xFF00) >> 8)
     ];
-  } else if (byteOrder === "little") {
-    buffer.writeFloatLE(value, 0);
-    return [buffer.readUInt16LE(0), buffer.readUInt16LE(2)];
-  } else {
-    // Default to big endian
+  } 
+  // Fallback to big endian (ABCD)
+  else {
+    console.warn(`Unrecognized byte order format for writing: ${byteOrder}, falling back to ABCD (big endian)`);
     buffer.writeFloatBE(value, 0);
     return [buffer.readUInt16BE(0), buffer.readUInt16BE(2)];
   }

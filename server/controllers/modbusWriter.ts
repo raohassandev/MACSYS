@@ -92,7 +92,21 @@ export async function writeToRegister(device: any, registerName: string, value: 
   }
 }
 
-// Function to find register by name in the MongoDB database
+/**
+ * Function to find register by name in the MongoDB database
+ * Returns a register with its address, length, and byte order configuration
+ * 
+ * Supported byte order formats:
+ * - "AB CD" (same as ABCD): MSW-MSB first, original Modbus format (used by Circutor PLCs)
+ * - "CD AB" (same as CDAB): LSW-MSB first, swapped register order
+ * - "BA DC" (same as BADC): MSW-LSB first, swapped bytes in each register
+ * - "DC BA" (same as DCBA): LSW-LSB first, swapped bytes and swapped registers
+ * - "big" (same as ABCD): Big endian format
+ * - "little" (same as DCBA): Little endian format
+ * 
+ * @param registerName The name of the register to find
+ * @returns The register configuration object or null if not found
+ */
 async function findRegisterByAddress(registerName: string): Promise<{ address: number; length: number; byteOrder?: string } | null> {
   try {
     // First try to find in active devices in MongoDB
@@ -154,26 +168,5 @@ async function findRegisterByAddress(registerName: string): Promise<{ address: n
   }
 }
 
-/**
- * Prepare a float value for Modbus by converting it to the right format
- * @param value The float value to convert
- * @returns The converted value as a buffer
- */
-function prepareModbusFloat(value: number): Buffer {
-  const buffer = Buffer.alloc(4);
-  buffer.writeFloatBE(value, 0);
-  return buffer;
-}
-
-/**
- * Converts a float value to a Modbus compatible format with registers
- * @param value The float value
- * @returns The converted value as array of registers (2 registers for float)
- */
-export function convertFloat(value: number): number[] {
-  const buffer = prepareModbusFloat(value);
-  // Extract the two 16-bit registers from the buffer
-  const reg1 = buffer.readUInt16BE(0);
-  const reg2 = buffer.readUInt16BE(2);
-  return [reg1, reg2];
-}
+// Note: These functions have been replaced by the more comprehensive
+// Float32toBytes function imported from modbusReader.ts which supports all byte order formats
