@@ -23,7 +23,7 @@ const mockChartData = [
 ];
 
 interface DataVisualizationProps {
-  deviceId: number;
+  deviceId: string;
 }
 
 export default function DataVisualization({ deviceId }: DataVisualizationProps) {

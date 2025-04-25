@@ -32,17 +32,22 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Register } from "@/types";
 
-// Form schema for register
+// Form schema for register with string fields for form handling
 const registerFormSchema = z.object({
   name: z.string().min(1, "Register name is required"),
-  address: z.string().transform((val) => parseInt(val, 10))
-    .refine((val) => !isNaN(val) && val >= 0, "Address must be a non-negative number"),
-  length: z.string().transform((val) => parseInt(val, 10))
-    .refine((val) => !isNaN(val) && val > 0, "Length must be a positive number"),
-  scaleFactor: z.string().transform((val) => parseInt(val, 10))
-    .refine((val) => !isNaN(val), "Scale factor must be a number").optional(),
-  decimalPoint: z.string().transform((val) => parseInt(val, 10))
-    .refine((val) => !isNaN(val) && val >= 0, "Decimal point must be a non-negative number").optional(),
+  address: z.string()
+    .refine((val) => !isNaN(parseInt(val, 10)), "Address must be a number")
+    .refine((val) => parseInt(val, 10) >= 0, "Address must be a non-negative number"),
+  length: z.string()
+    .refine((val) => !isNaN(parseInt(val, 10)), "Length must be a number")
+    .refine((val) => parseInt(val, 10) > 0, "Length must be a positive number"),
+  scaleFactor: z.string()
+    .refine((val) => !isNaN(parseInt(val, 10)), "Scale factor must be a number")
+    .optional(),
+  decimalPoint: z.string()
+    .refine((val) => !isNaN(parseInt(val, 10)), "Decimal point must be a number")
+    .refine((val) => parseInt(val, 10) >= 0, "Decimal point must be a non-negative number")
+    .optional(),
   dataType: z.string().optional(),
   byteOrder: z.string().optional(),
 });
@@ -91,13 +96,13 @@ export default function RegisterForm({
   
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      // Prepare the register data
+      // Prepare the register data with proper number conversions
       const registerData = {
         name: data.name,
-        address: data.address,
-        length: data.length,
-        scaleFactor: data.scaleFactor,
-        decimalPoint: data.decimalPoint,
+        address: parseInt(data.address, 10),
+        length: parseInt(data.length, 10),
+        scaleFactor: data.scaleFactor ? parseInt(data.scaleFactor, 10) : 1,
+        decimalPoint: data.decimalPoint ? parseInt(data.decimalPoint, 10) : 2,
         dataType: data.dataType || "float",
         byteOrder: data.byteOrder || "AB CD"
       };
