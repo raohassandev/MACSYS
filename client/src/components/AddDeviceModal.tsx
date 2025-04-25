@@ -115,18 +115,69 @@ export default function AddDeviceModal({ open, onClose }: AddDeviceModalProps) {
   });
   
   const addRegister = () => {
-    setRegisters([
-      ...registers,
+    // Define common register types for Circutor devices
+    const registerTemplates = [
       {
         name: "Temperature",
-        address: "0",
-        length: "1",
+        address: "2613",
+        length: "2",
+        scaleFactor: "1",
+        decimalPoint: "2",
+        byteOrder: "AB CD",
+        dataType: "float"
+      },
+      {
+        name: "Humidity",
+        address: "2615",
+        length: "2",
+        scaleFactor: "1",
+        decimalPoint: "2",
+        byteOrder: "AB CD",
+        dataType: "float"
+      },
+      {
+        name: "Power",
+        address: "2713",
+        length: "2",
+        scaleFactor: "1",
+        decimalPoint: "2",
+        byteOrder: "AB CD",
+        dataType: "float"
+      },
+      {
+        name: "Energy",
+        address: "2715",
+        length: "2",
         scaleFactor: "1",
         decimalPoint: "2",
         byteOrder: "AB CD",
         dataType: "float"
       }
-    ]);
+    ];
+    
+    // Get a template that isn't already in the registers array
+    let template = registerTemplates.find(t => 
+      !registers.some(r => r.name.toLowerCase() === t.name.toLowerCase())
+    );
+    
+    // If all templates are used, default to temperature with modified name
+    if (!template) {
+      const usedCount = registers.filter(r => 
+        r.name.toLowerCase().includes('temperature')
+      ).length;
+      
+      template = {
+        name: `Temperature ${usedCount + 1}`,
+        address: "2613",
+        length: "2",
+        scaleFactor: "1",
+        decimalPoint: "2",
+        byteOrder: "AB CD",
+        dataType: "float"
+      };
+    }
+    
+    setRegisters([...registers, template]);
   };
   
   const removeRegister = (index: number) => {
@@ -232,15 +283,26 @@ export default function AddDeviceModal({ open, onClose }: AddDeviceModalProps) {
       
       // Reset the form and state
       form.reset();
-      setRegisters([{
-        name: "Temperature",
-        address: "0",
-        length: "1",
-        scaleFactor: "1",
-        decimalPoint: "2",
-        byteOrder: "AB CD",
-        dataType: "float"
-      }]);
+      setRegisters([
+        {
+          name: "Setpoint", // Setpoint register is required for device control
+          address: "1013",
+          length: "2",
+          scaleFactor: "1",
+          decimalPoint: "2",
+          byteOrder: "AB CD",
+          dataType: "float"
+        },
+        {
+          name: "Temperature",
+          address: "2613",
+          length: "2",
+          scaleFactor: "1",
+          decimalPoint: "2",
+          byteOrder: "AB CD",
+          dataType: "float"
+        }
+      ]);
       setEnabled(true);
     } catch (error) {
       console.error("Error adding device:", error);
