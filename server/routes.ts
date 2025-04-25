@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
-import { writeToRegister } from "./controllers/modbusWriter";
-import { updateDeviceCache } from "./utils/configCache";
+import { writeToRegister } from "./controllers/modbusWriter.js";
+import { updateDeviceCache } from "./utils/configCache.js";
 
 // Update device cache every minute
 const CACHE_UPDATE_INTERVAL = 60 * 1000;
@@ -27,8 +27,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get device by ID
   app.get(`${apiPrefix}/devices/:id`, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
+      const id = req.params.id;
+      if (!id) {
         return res.status(400).json({ message: "Invalid device ID" });
       }
       
@@ -39,7 +39,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(device);
     } catch (error) {
-      console.error("Error getting device:", error);
+      console.error("Error getting device:", error instanceof Error ? error.message : "Unknown error");
       res.status(500).json({ message: "Failed to get device" });
     }
   });

@@ -117,17 +117,16 @@ interface NavItemProps {
 
 function NavItem({ href, icon, label, active, onClick }: NavItemProps) {
   return (
-    <Link href={href}>
-      <a
-        className={cn(
-          "flex items-center px-4 py-3 text-gray-300 hover:bg-secondary",
-          active && "bg-secondary border-l-4 border-primary"
-        )}
-        onClick={onClick}
-      >
-        {icon}
-        {label}
-      </a>
+    <Link 
+      href={href} 
+      onClick={onClick}
+      className={cn(
+        "flex items-center px-4 py-3 text-gray-300 hover:bg-secondary",
+        active && "bg-secondary border-l-4 border-primary"
+      )}
+    >
+      {icon}
+      {label}
     </Link>
   );
 }
@@ -146,24 +145,23 @@ function DeviceNavItem({ device, onClick }: DeviceNavItemProps) {
   const status = isOnline ? DeviceStatus.ONLINE : DeviceStatus.OFFLINE;
   
   return (
-    <Link href={`/devices/${device.id}`}>
-      <a
-        className="flex items-center justify-between px-4 py-3 text-gray-300 hover:bg-secondary"
-        onClick={onClick}
-      >
-        <div className="flex items-center">
-          <div 
-            className={cn(
-              "w-2 h-2 rounded-full mr-3",
-              isOnline ? "bg-green-500" : "bg-red-500"
-            )}
-          />
-          <span>{device.name}</span>
-        </div>
-        <span className="text-xs bg-secondary px-2 py-1 rounded">
-          {status === DeviceStatus.ONLINE ? "Online" : "Offline"}
-        </span>
-      </a>
+    <Link 
+      href={`/devices/${device.id}`}
+      onClick={onClick}
+      className="flex items-center justify-between px-4 py-3 text-gray-300 hover:bg-secondary"
+    >
+      <div className="flex items-center">
+        <div 
+          className={cn(
+            "w-2 h-2 rounded-full mr-3",
+            isOnline ? "bg-green-500" : "bg-red-500"
+          )}
+        />
+        <span>{device.name}</span>
+      </div>
+      <span className="text-xs bg-secondary px-2 py-1 rounded">
+        {status === DeviceStatus.ONLINE ? "Online" : "Offline"}
+      </span>
     </Link>
   );
 }

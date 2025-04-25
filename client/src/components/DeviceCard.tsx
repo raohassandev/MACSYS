@@ -91,11 +91,9 @@ export default function DeviceCard({ device }: DeviceCardProps) {
         
         <div className="mt-4">
           <Link href={`/devices/${device.id}`}>
-            <a className="w-full">
-              <Button variant="secondary" className="w-full">
-                View Details
-              </Button>
-            </a>
+            <Button variant="secondary" className="w-full">
+              View Details
+            </Button>
           </Link>
         </div>
       </CardContent>
