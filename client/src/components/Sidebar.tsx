@@ -9,6 +9,8 @@ import {
   LayoutDashboard,
   ServerIcon,
   LineChart,
+  BarChart4,
+  FileBarChart2,
   Settings,
   ChevronRight,
   User,
@@ -64,6 +66,14 @@ export default function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           icon={<LineChart className="h-4 w-4 mr-3" />} 
           label="History" 
           active={location === "/history"} 
+          onClick={handleNavigation}
+        />
+        
+        <NavItem 
+          href="/reports" 
+          icon={<FileBarChart2 className="h-4 w-4 mr-3" />} 
+          label="Reports" 
+          active={location === "/reports"} 
           onClick={handleNavigation}
         />
         

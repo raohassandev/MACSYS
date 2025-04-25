@@ -341,6 +341,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to get historical data" });
     }
   });
+  
+  // Get report data - aggregated historical data for reports
+  app.get(`${apiPrefix}/reports`, async (req, res) => {
+    try {
+      const { deviceId, startDate, endDate, reportType } = req.query;
+      
+      if (!deviceId) {
+        return res.status(400).json({ message: "Device ID is required" });
+      }
+      
+      const device = await storage.getDeviceById(deviceId as string);
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      // Parse date range from query parameters with defaults
+      const parsedEndDate = endDate ? new Date(endDate as string) : new Date();
+      let parsedStartDate;
+      
+      if (startDate) {
+        parsedStartDate = new Date(startDate as string);
+      } else {
+        // Default date range based on report type
+        switch(reportType) {
+          case 'daily':
+            parsedStartDate = new Date(parsedEndDate);
+            parsedStartDate.setHours(0, 0, 0, 0);
+            break;
+          case 'weekly':
+            parsedStartDate = new Date(parsedEndDate);
+            parsedStartDate.setDate(parsedStartDate.getDate() - 7);
+            break;
+          case 'monthly':
+            parsedStartDate = new Date(parsedEndDate);
+            parsedStartDate.setMonth(parsedStartDate.getMonth() - 1);
+            break;
+          case 'yearly':
+            parsedStartDate = new Date(parsedEndDate);
+            parsedStartDate.setFullYear(parsedStartDate.getFullYear() - 1);
+            break;
+          default:
+            // Default to 24 hours
+            parsedStartDate = new Date(parsedEndDate.getTime() - 24 * 60 * 60 * 1000);
+        }
+      }
+      
+      // Get the historical data
+      const historicalData = await storage.getHistoricalData(
+        deviceId as string, 
+        parsedStartDate, 
+        parsedEndDate
+      );
+      
+      // For now, just return the raw data - in the future we could aggregate here
+      res.json(historicalData);
+    } catch (error) {
+      console.error("Error generating report:", error instanceof Error ? error.message : "Unknown error");
+      res.status(500).json({ message: "Failed to generate report" });
+    }
+  });
 
   // Test endpoint
   app.post(`${apiPrefix}/test`, async (req, res) => {
