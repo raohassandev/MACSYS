@@ -113,6 +113,14 @@ function getRegistersForDevice(deviceName: string): any[] {
         dataType: "boolean",
         byteOrder: "big",
         length: 1
+      },
+      {
+        // Add required Setpoint register
+        name: "Setpoint",
+        address: 40007,
+        dataType: "float",
+        byteOrder: "big",
+        length: 2
       }
     ];
   } else if (deviceName === "RTU-001") {
@@ -144,6 +152,14 @@ function getRegistersForDevice(deviceName: string): any[] {
         dataType: "int",
         byteOrder: "big",
         length: 1
+      },
+      {
+        // Add required Setpoint register
+        name: "Setpoint",
+        address: 40009,
+        dataType: "float",
+        byteOrder: "big",
+        length: 2
       }
     ];
   } else if (deviceName === "PLC-002") {
@@ -168,6 +184,14 @@ function getRegistersForDevice(deviceName: string): any[] {
         dataType: "int",
         byteOrder: "big",
         length: 1
+      },
+      {
+        // Add required Setpoint register
+        name: "Setpoint",
+        address: 40007,
+        dataType: "float",
+        byteOrder: "big",
+        length: 2
       }
     ];
   }
@@ -190,6 +214,9 @@ async function createSampleData(deviceId: string, device: any) {
           realtimeData[register.name] = 12.3;
         } else if (register.name === "Humidity") {
           realtimeData[register.name] = 45.7;
+        } else if (register.name === "Setpoint") {
+          // Add value for the Setpoint register
+          realtimeData[register.name] = 50.0;
         } else {
           realtimeData[register.name] = parseFloat((Math.random() * 100).toFixed(1));
         }
@@ -250,6 +277,13 @@ async function createSampleData(deviceId: string, device: any) {
             histData[register.name] = parseFloat((10.0 + (Math.random() * 5.0)).toFixed(1));
           } else if (register.name === "Humidity") {
             histData[register.name] = parseFloat((40.0 + (Math.random() * 10.0)).toFixed(1));
+          } else if (register.name === "Setpoint") {
+            // Simulate Setpoint adjustments over time
+            const hourOfDay = timestamp.getHours();
+            // Higher setpoint during daytime, lower at night
+            const baseSetpoint = 50.0;
+            const variation = hourOfDay >= 8 && hourOfDay <= 20 ? 5.0 : -5.0;
+            histData[register.name] = parseFloat((baseSetpoint + variation + (Math.random() * 2.0 - 1.0)).toFixed(1));
           } else {
             histData[register.name] = parseFloat((Math.random() * 100).toFixed(1));
           }
