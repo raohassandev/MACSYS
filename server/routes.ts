@@ -193,13 +193,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         device = await storage.getDeviceByName(deviceName.device);
       }
       
-      // Last resort - try to find by ID
+      // Last resort - try to find by ID directly
       if (!device && typeof deviceName === 'string') {
         try {
-          const deviceId = parseInt(deviceName);
-          if (!isNaN(deviceId)) {
-            device = await storage.getDeviceById(deviceId);
-          }
+          // In MongoDB, we can just use the string ID directly
+          device = await storage.getDeviceById(deviceName);
         } catch (err) {
           // Ignore this error as it's just a fallback
         }
