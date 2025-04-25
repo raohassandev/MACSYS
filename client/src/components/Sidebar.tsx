@@ -2,7 +2,7 @@ import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useDevices } from "@/hooks/useDevices";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DeviceStatus } from "@shared/schema";
+import { DeviceStatus } from "../types";
 
 // Icons
 import {
@@ -133,7 +133,7 @@ function NavItem({ href, icon, label, active, onClick }: NavItemProps) {
 
 interface DeviceNavItemProps {
   device: {
-    id: number;
+    id: string;
     name: string;
     enabled: boolean;
   };

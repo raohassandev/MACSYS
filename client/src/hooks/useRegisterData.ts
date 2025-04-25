@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { RealtimeData } from "@shared/schema";
+import { RealtimeData } from "../types";
 
-export function useRegisterData(deviceId: number) {
+export function useRegisterData(deviceId: string) {
   return useQuery<RealtimeData>({
     queryKey: [`/api/devices/${deviceId}/latest`],
     enabled: !!deviceId,

@@ -1,8 +1,8 @@
-import { Device } from "../models/device.js";
-import { storage } from "../storage.js";
+import { IDevice } from "../models";
+import { storage } from "../storage";
 
 // Cache of device configurations
-let deviceCache: Device[] = [];
+let deviceCache: IDevice[] = [];
 
 /**
  * Updates the device cache with the current device configurations
@@ -27,6 +27,6 @@ export async function updateDeviceCache(): Promise<void> {
  * Returns the current device cache
  * @returns Array of devices
  */
-export function getDeviceCache(): Device[] {
+export function getDeviceCache(): IDevice[] {
   return deviceCache;
 }

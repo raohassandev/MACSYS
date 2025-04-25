@@ -1,186 +1,183 @@
-import { db } from "@db";
 import { 
-  devices, 
-  registers,
-  realtimeData,
-  historicalData,
-  DeviceInsert,
-  RegisterInsert
-} from "@shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+  Device,  
+  RealtimeData, 
+  HistoricalData,
+  IDevice,
+  IRealtimeData,
+  IHistoricalData
+} from './models';
 
 export const storage = {
   // Device operations
-  async getAllDevices() {
-    return db.query.devices.findMany({
-      with: { registers: true }
-    });
-  },
-
-  async getDeviceById(id: number) {
-    return db.query.devices.findFirst({
-      where: eq(devices.id, id),
-      with: { registers: true }
-    });
-  },
-
-  async getDeviceByName(name: string) {
-    return db.query.devices.findFirst({
-      where: eq(devices.name, name),
-      with: { registers: true }
-    });
-  },
-
-  async createDevice(device: DeviceInsert) {
+  async getAllDevices(): Promise<IDevice[]> {
     try {
-      const [newDevice] = await db.insert(devices).values(device).returning();
-      return newDevice;
+      return await Device.find().exec();
+    } catch (error) {
+      console.error("Error getting all devices:", error);
+      throw error;
+    }
+  },
+
+  async getDeviceById(id: string): Promise<IDevice | null> {
+    try {
+      return await Device.findById(id).exec();
+    } catch (error) {
+      console.error(`Error getting device by ID ${id}:`, error);
+      throw error;
+    }
+  },
+
+  async getDeviceByName(name: string): Promise<IDevice | null> {
+    try {
+      return await Device.findOne({ name }).exec();
+    } catch (error) {
+      console.error(`Error getting device by name ${name}:`, error);
+      throw error;
+    }
+  },
+
+  async createDevice(deviceData: any): Promise<IDevice> {
+    try {
+      const device = new Device(deviceData);
+      return await device.save();
     } catch (error) {
       console.error("Error creating device:", error);
       throw error;
     }
   },
 
-  async updateDevice(id: number, data: Partial<DeviceInsert>) {
+  async updateDevice(id: string, data: any): Promise<IDevice | null> {
     try {
-      const [updatedDevice] = await db.update(devices)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(devices.id, id))
-        .returning();
-      return updatedDevice;
+      return await Device.findByIdAndUpdate(id, data, { new: true }).exec();
     } catch (error) {
-      console.error("Error updating device:", error);
+      console.error(`Error updating device ${id}:`, error);
       throw error;
     }
   },
 
-  async deleteDevice(id: number) {
+  async deleteDevice(id: string): Promise<IDevice | null> {
     try {
-      const [deletedDevice] = await db.delete(devices)
-        .where(eq(devices.id, id))
-        .returning();
-      return deletedDevice;
+      return await Device.findByIdAndDelete(id).exec();
     } catch (error) {
-      console.error("Error deleting device:", error);
+      console.error(`Error deleting device ${id}:`, error);
       throw error;
     }
   },
 
   // Register operations
-  async getRegistersForDevice(deviceId: number) {
-    return db.query.registers.findMany({
-      where: eq(registers.deviceId, deviceId)
-    });
+  async getRegistersForDevice(deviceId: string): Promise<any[]> {
+    try {
+      const device = await Device.findById(deviceId).exec();
+      return device?.registers || [];
+    } catch (error) {
+      console.error(`Error getting registers for device ${deviceId}:`, error);
+      throw error;
+    }
   },
 
-  async createRegister(register: RegisterInsert) {
+  async createRegister(registerData: any): Promise<IDevice | null> {
     try {
-      const [newRegister] = await db.insert(registers).values(register).returning();
-      return newRegister;
+      const { deviceId, ...registerInfo } = registerData;
+      return await Device.findByIdAndUpdate(
+        deviceId,
+        { $push: { registers: registerInfo } },
+        { new: true }
+      ).exec();
     } catch (error) {
       console.error("Error creating register:", error);
       throw error;
     }
   },
 
-  async updateRegister(id: number, data: Partial<RegisterInsert>) {
+  async updateRegister(id: string, data: any): Promise<IDevice | null> {
     try {
-      const [updatedRegister] = await db.update(registers)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(registers.id, id))
-        .returning();
-      return updatedRegister;
+      const { deviceId, registerId, ...updateData } = data;
+      return await Device.findOneAndUpdate(
+        { _id: deviceId, "registers._id": registerId },
+        { $set: { "registers.$": updateData } },
+        { new: true }
+      ).exec();
     } catch (error) {
-      console.error("Error updating register:", error);
+      console.error(`Error updating register ${id}:`, error);
       throw error;
     }
   },
 
-  async deleteRegister(id: number) {
+  async deleteRegister(id: string): Promise<IDevice | null> {
     try {
-      const [deletedRegister] = await db.delete(registers)
-        .where(eq(registers.id, id))
-        .returning();
-      return deletedRegister;
+      const { deviceId, registerId } = JSON.parse(id);
+      return await Device.findByIdAndUpdate(
+        deviceId,
+        { $pull: { registers: { _id: registerId } } },
+        { new: true }
+      ).exec();
     } catch (error) {
-      console.error("Error deleting register:", error);
+      console.error(`Error deleting register ${id}:`, error);
       throw error;
     }
   },
 
   // Data operations
-  async saveRealtimeData(deviceId: number, data: any, status: boolean = true) {
+  async saveRealtimeData(deviceId: string, data: any, status: boolean = true): Promise<IRealtimeData> {
     try {
-      const [newData] = await db.insert(realtimeData)
-        .values({
-          deviceId,
-          timestamp: new Date(),
-          data,
-          status,
-          control: { type: "local", source: "local" }
-        })
-        .returning();
-      return newData;
+      const realtimeData = new RealtimeData({
+        device: deviceId,
+        timestamp: new Date(),
+        data,
+        status,
+        control: 'central'
+      });
+      return await realtimeData.save();
     } catch (error) {
       console.error("Error saving realtime data:", error);
       throw error;
     }
   },
 
-  async getLatestRealtimeData(deviceId: number) {
+  async getLatestRealtimeData(deviceId: string): Promise<IRealtimeData | null> {
     try {
-      const data = await db.query.realtimeData.findFirst({
-        where: eq(realtimeData.deviceId, deviceId),
-        orderBy: desc(realtimeData.timestamp)
-      });
-      return data;
+      return await RealtimeData.findOne({ device: deviceId })
+        .sort({ timestamp: -1 })
+        .exec();
     } catch (error) {
-      console.error("Error getting latest realtime data:", error);
+      console.error(`Error getting latest realtime data for device ${deviceId}:`, error);
       throw error;
     }
   },
 
-  async saveHistoricalData(deviceId: number, data: any) {
+  async saveHistoricalData(deviceId: string, data: any): Promise<IHistoricalData> {
     try {
-      const [newData] = await db.insert(historicalData)
-        .values({
-          deviceId,
-          timestamp: new Date(),
-          data
-        })
-        .returning();
-      return newData;
+      const historicalData = new HistoricalData({
+        device: deviceId,
+        timestamp: new Date(),
+        data
+      });
+      return await historicalData.save();
     } catch (error) {
       console.error("Error saving historical data:", error);
       throw error;
     }
   },
 
-  async getHistoricalData(deviceId: number, startTime: Date, endTime: Date) {
+  async getHistoricalData(deviceId: string, startTime: Date, endTime: Date): Promise<IHistoricalData[]> {
     try {
-      return db.query.historicalData.findMany({
-        where: and(
-          eq(historicalData.deviceId, deviceId),
-          ({ timestamp }) => timestamp >= startTime,
-          ({ timestamp }) => timestamp <= endTime
-        ),
-        orderBy: desc(historicalData.timestamp)
-      });
+      return await HistoricalData.find({
+        device: deviceId,
+        timestamp: { $gte: startTime, $lte: endTime }
+      })
+        .sort({ timestamp: -1 })
+        .exec();
     } catch (error) {
-      console.error("Error getting historical data:", error);
+      console.error(`Error getting historical data for device ${deviceId}:`, error);
       throw error;
     }
   },
   
-  async findByIdAndUpdate(deviceId: number, updateData: any) {
+  async findByIdAndUpdate(deviceId: string, updateData: any): Promise<IDevice | null> {
     try {
-      const [updatedDevice] = await db.update(devices)
-        .set({ ...updateData, updatedAt: new Date() })
-        .where(eq(devices.id, deviceId))
-        .returning();
-      return updatedDevice;
+      return await Device.findByIdAndUpdate(deviceId, updateData, { new: true }).exec();
     } catch (error) {
-      console.error("Error updating device:", error);
+      console.error(`Error updating device ${deviceId}:`, error);
       throw error;
     }
   }

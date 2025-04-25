@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { Edit, Settings, Clock, Activity } from "lucide-react";
-import { Device } from "@shared/schema";
+import { Device } from "../types";
 import { cn } from "@/lib/utils";
 import { useRegisterData } from "@/hooks/useRegisterData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
