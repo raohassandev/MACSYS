@@ -22,7 +22,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { Device } from "@shared/schema";
+import { Device } from "@/types";
 
 // Form schema for writing to a register
 const writeRegisterSchema = z.object({

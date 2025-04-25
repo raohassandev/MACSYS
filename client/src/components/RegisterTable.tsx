@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import WriteRegisterModal from "./WriteRegisterModal";
 
 interface RegisterTableProps {
-  deviceId: number;
+  deviceId: string;
 }
 
 export default function RegisterTable({ deviceId }: RegisterTableProps) {

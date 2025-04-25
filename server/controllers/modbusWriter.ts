@@ -21,12 +21,14 @@ export async function writeToRegister(device: any, registerName: string, value: 
   try {
     // Connect to the device
     try {
-      await client.connectTCP(device.ipAddress, {
+      // Support both ipAddress and ip properties for backward compatibility
+      const ip = device.ipAddress || device.ip;
+      await client.connectTCP(ip, {
         port: device.port,
       });
       isConnected = true;
     } catch (error) {
-      console.log(`Connection failed`, error);
+      console.log(`Connection failed to ${device.name} at ${device.ipAddress || device.ip}:${device.port}`, error);
       return false;
     }
 
