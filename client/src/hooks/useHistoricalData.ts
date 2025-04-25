@@ -7,6 +7,15 @@ export interface HistoricalData {
   data: Record<string, any>;
 }
 
+// Transform MongoDB response to match our HistoricalData interface
+const transformHistoricalData = (data: any[]): HistoricalData[] => {
+  return data.map(item => ({
+    deviceId: item.deviceId || item.device, // MongoDB might use 'device' instead of 'deviceId'
+    timestamp: item.timestamp,
+    data: item.data || {}
+  }));
+};
+
 export function useHistoricalData(deviceId: string, startDate?: Date, endDate?: Date) {
   return useQuery<HistoricalData[]>({
     queryKey: ['/api/historical-data', deviceId, startDate?.toISOString(), endDate?.toISOString()],
@@ -20,8 +29,9 @@ export function useHistoricalData(deviceId: string, startDate?: Date, endDate?: 
         endDate: endDate.toISOString()
       });
 
-      // Use the generic parameter to specify the expected return type
-      return apiRequest<HistoricalData[]>('GET', `/api/historical-data?${params.toString()}`);
+      // Fetch data and transform it to match our interface
+      const data = await apiRequest<any[]>('GET', `/api/historical-data?${params.toString()}`);
+      return transformHistoricalData(data || []);
     },
     enabled: Boolean(deviceId && startDate && endDate),
     refetchOnWindowFocus: false
