@@ -278,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get historical data for a device
+  // Get historical data for a device - device ID in path parameter
   app.get(`${apiPrefix}/devices/:id/history`, async (req, res) => {
     try {
       const id = req.params.id;
@@ -301,6 +301,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const data = await storage.getHistoricalData(id, startTime, endTime);
       res.json(data);
+    } catch (error) {
+      console.error("Error getting historical data:", error instanceof Error ? error.message : "Unknown error");
+      res.status(500).json({ message: "Failed to get historical data" });
+    }
+  });
+  
+  // Get historical data - device ID in query parameter (for the History page)
+  app.get(`${apiPrefix}/historical-data`, async (req, res) => {
+    try {
+      const { deviceId, startDate, endDate } = req.query;
+      
+      if (!deviceId) {
+        return res.status(400).json({ message: "Device ID is required" });
+      }
+      
+      const device = await storage.getDeviceById(deviceId as string);
+      if (!device) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      // Parse date range from query parameters with defaults
+      const parsedEndDate = endDate ? new Date(endDate as string) : new Date();
+      
+      // Default to 24 hours if start date not specified
+      const parsedStartDate = startDate 
+        ? new Date(startDate as string) 
+        : new Date(parsedEndDate.getTime() - 24 * 60 * 60 * 1000);
+      
+      const historicalData = await storage.getHistoricalData(
+        deviceId as string, 
+        parsedStartDate, 
+        parsedEndDate
+      );
+      
+      res.json(historicalData);
     } catch (error) {
       console.error("Error getting historical data:", error instanceof Error ? error.message : "Unknown error");
       res.status(500).json({ message: "Failed to get historical data" });

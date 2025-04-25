@@ -1,35 +1,98 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useDevices } from "@/hooks/useDevices";
+import { useHistoricalData } from "@/hooks/useHistoricalData";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { Device } from "@/types";
 
-// Mock historical data
-const mockHistoricalData = [
-  { time: '00:00', Temperature: 21.5, Pressure: 2.8 },
-  { time: '02:00', Temperature: 21.2, Pressure: 2.7 },
-  { time: '04:00', Temperature: 20.8, Pressure: 2.7 },
-  { time: '06:00', Temperature: 20.5, Pressure: 2.6 },
-  { time: '08:00', Temperature: 21.0, Pressure: 2.7 },
-  { time: '10:00', Temperature: 22.5, Pressure: 2.9 },
-  { time: '12:00', Temperature: 24.0, Pressure: 3.0 },
-  { time: '14:00', Temperature: 25.5, Pressure: 3.2 },
-  { time: '16:00', Temperature: 26.0, Pressure: 3.3 },
-  { time: '18:00', Temperature: 25.5, Pressure: 3.2 },
-  { time: '20:00', Temperature: 24.0, Pressure: 3.0 },
-  { time: '22:00', Temperature: 22.5, Pressure: 2.9 },
-  { time: '24:00', Temperature: 21.5, Pressure: 2.8 },
-];
+// Helper functions for formatting data
+const formatHistoricalData = (data: any[]) => {
+  // Map the historical data to a format suitable for the chart
+  return data.map(item => {
+    // Format the timestamp to a readable format
+    const date = new Date(item.timestamp);
+    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Start with the time key
+    const result: any = { time };
+    
+    // Add all data properties as separate keys
+    if (item.data) {
+      Object.keys(item.data).forEach(key => {
+        result[key] = item.data[key];
+      });
+    }
+    
+    return result;
+  });
+};
+
+// Generate Line components for each data property
+const getChartLines = (data: any[]) => {
+  if (!data || data.length === 0 || !data[0].data) return null;
+  
+  // Get unique data keys from all data points
+  const dataKeys = new Set<string>();
+  data.forEach(item => {
+    if (item.data) {
+      Object.keys(item.data).forEach(key => dataKeys.add(key));
+    }
+  });
+  
+  // Define a set of colors for different lines
+  const colors = [
+    "hsl(var(--chart-1))", // Blue
+    "hsl(var(--chart-2))", // Green
+    "hsl(var(--chart-3))", // Yellow
+    "hsl(var(--chart-4))", // Red
+    "hsl(var(--chart-5))", // Purple
+    "hsl(var(--chart-6))"  // Cyan
+  ];
+  
+  // Generate a Line component for each data key
+  return Array.from(dataKeys).map((key, index) => (
+    <Line
+      key={key}
+      type="monotone"
+      dataKey={key}
+      stroke={colors[index % colors.length]}
+      strokeWidth={2}
+      dot={{ r: 3 }}
+      activeDot={{ r: 5 }}
+      name={`${key}`}
+    />
+  ));
+};
 
 export default function History() {
-  const { data: devices } = useDevices();
+  const { data: devices, isLoading: isLoadingDevices } = useDevices();
   const [selectedDevice, setSelectedDevice] = useState<string>("");
+  const [selectedDeviceObj, setSelectedDeviceObj] = useState<Device | null>(null);
   const [startDate, setStartDate] = useState<Date | undefined>(
     new Date(Date.now() - 24 * 60 * 60 * 1000)
   );
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const [isQuerying, setIsQuerying] = useState(false);
+  
+  const { data: historicalData, isLoading: isLoadingHistoricalData, refetch } = useHistoricalData(
+    selectedDevice,
+    startDate,
+    endDate
+  );
+  
+  // Update the selected device object when the device ID changes
+  useEffect(() => {
+    if (selectedDevice && devices) {
+      const device = devices.find(d => d.id === selectedDevice);
+      setSelectedDeviceObj(device || null);
+    } else {
+      setSelectedDeviceObj(null);
+    }
+  }, [selectedDevice, devices]);
   
   return (
     <div className="p-6">
@@ -79,7 +142,23 @@ export default function History() {
             </div>
             
             <div className="flex items-end">
-              <Button className="w-full">Query Data</Button>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  setIsQuerying(true);
+                  refetch().finally(() => setIsQuerying(false));
+                }}
+                disabled={!selectedDevice || isLoadingHistoricalData || isQuerying}
+              >
+                {isQuerying || isLoadingHistoricalData ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  'Query Data'
+                )}
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -90,11 +169,16 @@ export default function History() {
           <CardTitle>Historical Trend</CardTitle>
         </CardHeader>
         <CardContent>
-          {selectedDevice ? (
+          {isLoadingHistoricalData || isQuerying ? (
+            <div className="flex justify-center items-center h-96">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <span className="ml-2 text-lg">Loading historical data...</span>
+            </div>
+          ) : selectedDevice && historicalData && historicalData.length > 0 ? (
             <div className="w-full h-96">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={mockHistoricalData}
+                  data={formatHistoricalData(historicalData)}
                   margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -116,26 +200,14 @@ export default function History() {
                     }}
                   />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="Temperature"
-                    stroke="hsl(var(--chart-1))"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                    name="Temperature (°C)"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="Pressure"
-                    stroke="hsl(var(--chart-3))"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                    name="Pressure (bar)"
-                  />
+                  {getChartLines(historicalData)}
                 </LineChart>
               </ResponsiveContainer>
+            </div>
+          ) : selectedDevice ? (
+            <div className="text-center py-12 text-gray-400">
+              <p>No historical data available for the selected time range.</p>
+              <p className="mt-2">Try adjusting the date range or selecting a different device.</p>
             </div>
           ) : (
             <div className="text-center py-12 text-gray-400">

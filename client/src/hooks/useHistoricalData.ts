@@ -1,36 +1,29 @@
-import { useQuery } from "@tanstack/react-query";
-import { HistoricalData } from "../types";
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
-interface UseHistoricalDataParams {
+export interface HistoricalData {
   deviceId: string;
-  timeRange: "1h" | "24h" | "7d";
+  timestamp: string;
+  data: Record<string, any>;
 }
 
-export function useHistoricalData({ deviceId, timeRange }: UseHistoricalDataParams) {
-  // Calculate the start date based on the time range
-  const getStartDate = () => {
-    const now = new Date();
-    
-    switch (timeRange) {
-      case "1h":
-        return new Date(now.getTime() - 60 * 60 * 1000);
-      case "24h":
-        return new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      case "7d":
-        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      default:
-        return new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    }
-  };
-  
-  const startDate = getStartDate();
-  const endDate = new Date();
-  
+export function useHistoricalData(deviceId: string, startDate?: Date, endDate?: Date) {
   return useQuery<HistoricalData[]>({
-    queryKey: [`/api/devices/${deviceId}/historical`, timeRange],
-    queryFn: () => 
-      fetch(`/api/devices/${deviceId}/historical?start=${startDate.toISOString()}&end=${endDate.toISOString()}`)
-        .then(res => res.json()),
-    enabled: !!deviceId,
+    queryKey: ['/api/historical-data', deviceId, startDate?.toISOString(), endDate?.toISOString()],
+    queryFn: async () => {
+      // Only fetch if deviceId and dates are provided
+      if (!deviceId || !startDate || !endDate) return [];
+
+      const params = new URLSearchParams({
+        deviceId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+
+      const data = await apiRequest('GET', `/api/historical-data?${params.toString()}`);
+      return data as HistoricalData[];
+    },
+    enabled: Boolean(deviceId && startDate && endDate),
+    refetchOnWindowFocus: false
   });
 }
