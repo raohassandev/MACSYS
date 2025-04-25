@@ -31,15 +31,15 @@ export interface IDevice extends Document {
 }
 
 export interface IRealtimeData extends Document {
-  device: string | null | undefined;
-  timestamp: Date | null | undefined;
+  device?: string | null | undefined;
+  timestamp?: Date | null | undefined;
   data: Record<string, any>;
-  status: boolean | null | undefined;
+  status?: boolean | null | undefined;
   control?: 'central' | 'local';
 }
 
 export interface IHistoricalData extends Document {
-  device: string | null | undefined;
-  timestamp: Date | null | undefined;
+  device?: string | null | undefined;
+  timestamp?: Date | null | undefined;
   data: Record<string, any>;
 }

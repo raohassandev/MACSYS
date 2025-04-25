@@ -93,30 +93,42 @@ export async function writeToRegister(device: any, registerName: string, value: 
 // Function to find register by name in the MongoDB database
 async function findRegisterByAddress(registerName: string): Promise<{ address: number; length: number; byteOrder?: string } | null> {
   try {
-    // Get the device ID from the request
-    const devices = await storage.getAllDevices();
-    
-    // Loop through all devices to find the register
-    for (const device of devices) {
-      if (device.registers && device.registers.length > 0) {
-        for (const register of device.registers) {
-          if (register.name.toLowerCase() === registerName.toLowerCase()) {
-            // Ensure address is a number or default to 0
-            const address = typeof register.address === 'number' ? register.address : 0;
-            return {
-              address: address,
-              length: register.length || 2,
-              byteOrder: register.byteOrder || 'big'
-            };
+    // First try to find in active devices in MongoDB
+    try {
+      // Get all devices from the database
+      const devices = await storage.getAllDevices();
+      
+      // Normalize the register name for case-insensitive comparison
+      const normalizedRegisterName = registerName.toLowerCase().trim();
+      
+      // Loop through all devices to find the register
+      for (const device of devices) {
+        // Only check enabled devices
+        if (device.enabled && device.registers && device.registers.length > 0) {
+          for (const register of device.registers) {
+            if (register.name && register.name.toLowerCase().trim() === normalizedRegisterName) {
+              // Ensure address is a number or default to 0
+              const address = typeof register.address === 'number' ? register.address : 0;
+              console.log(`Found register ${registerName} in device ${device.name} with address ${address}`);
+              
+              return {
+                address: address,
+                length: register.length || 2, // Default to 2 registers for float values
+                byteOrder: register.byteOrder || 'big' // Default to big endian
+              };
+            }
           }
         }
       }
+    } catch (dbError) {
+      console.error("Error accessing MongoDB for registers:", dbError);
+      // Continue to fallback if database fails
     }
     
-    // If we get here, no matching register was found
-    console.error(`Register ${registerName} not found in any device`);
+    // If we get here, no matching register was found in the database
+    console.log(`Register ${registerName} not found in any device, using fallback`);
     
-    // Fallback for circutor device registers
+    // Fallback for circutor device registers - hardcoded for reliability
     const circutorRegisters: Record<string, { address: number; length: number; byteOrder: string }> = {
       "temperature": { address: 2613, length: 2, byteOrder: "AB CD" },
       "humidity": { address: 2615, length: 2, byteOrder: "AB CD" },
@@ -125,7 +137,15 @@ async function findRegisterByAddress(registerName: string): Promise<{ address: n
       "setpoint": { address: 1013, length: 2, byteOrder: "AB CD" }
     };
     
-    return circutorRegisters[registerName.toLowerCase()] || null;
+    // Check for the register in our hardcoded fallback (case insensitive)
+    const fallbackRegister = circutorRegisters[registerName.toLowerCase()];
+    if (fallbackRegister) {
+      console.log(`Using fallback register definition for ${registerName}`);
+      return fallbackRegister;
+    }
+    
+    console.error(`Register ${registerName} not found in any device or fallback`);
+    return null;
   } catch (error) {
     console.error("Error finding register:", error);
     return null;
