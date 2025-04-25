@@ -4,6 +4,8 @@ export interface IRegister {
   name: string;
   address: number;
   length?: number;
+  scaleFactor?: number;
+  decimalPoint?: number;
   dataType?: string;
   byteOrder?: string;
 }
@@ -13,6 +15,8 @@ export interface MongoRegister {
   name: string;
   address?: number | null | undefined;
   length?: number | null | undefined;
+  scaleFactor?: number | null | undefined;
+  decimalPoint?: number | null | undefined;
   dataType?: string | null | undefined;
   byteOrder?: string | null | undefined;
   _id?: string | any; // Allow ObjectId or string

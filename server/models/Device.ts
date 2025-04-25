@@ -9,6 +9,8 @@ const registerSchema = new mongoose.Schema({
   },
   address: Number,
   length: Number,
+  scaleFactor: Number, // Scale factor for the value
+  decimalPoint: Number, // Decimal point position
   dataType: String,
   byteOrder: String
 });
