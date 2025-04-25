@@ -7,9 +7,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Button } from "@/components/ui/button";
 import { Loader2, Download, BarChart2, LineChart as LineChartIcon, Calendar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Device } from "@/types";
 import { format, subDays, subMonths, subYears, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { useHistoricalData } from "@/hooks/useHistoricalData";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import { saveAs } from "file-saver";
+import * as XLSX from "xlsx";
 
 export default function Reports() {
   const { data: devices, isLoading: isLoadingDevices } = useDevices();
@@ -158,9 +163,24 @@ export default function Reports() {
                 <Button variant="outline" size="sm" onClick={() => setChartType("bar")}>
                   <BarChart2 className={`h-4 w-4 ${chartType === 'bar' ? 'text-primary' : ''}`} />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => exportReportAsCsv(formattedData, dataKeys, reportType, selectedDate, selectedDeviceObj?.name || 'device')}>
-                  <Download className="h-4 w-4 mr-1" /> Export
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-1" /> Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => exportReportAsCsv(formattedData, dataKeys, reportType, selectedDate, selectedDeviceObj?.name || 'device')}>
+                      CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportReportAsPdf(formattedData, dataKeys, reportType, selectedDate, selectedDeviceObj?.name || 'device')}>
+                      PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportReportAsExcel(formattedData, dataKeys, reportType, selectedDate, selectedDeviceObj?.name || 'device')}>
+                      Excel
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardHeader>
             <CardContent>
