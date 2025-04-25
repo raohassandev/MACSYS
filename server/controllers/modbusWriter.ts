@@ -1,6 +1,6 @@
 import ModbusRTU from "modbus-serial";
-import { Device } from "@shared/schema";
-import { Float32toBytes } from "./float32Bytes";
+import { Float32toBytes } from "./modbusReader";
+import { storage } from "../storage";
 
 /**
  * Writes a value to a register on a Modbus device
@@ -9,7 +9,7 @@ import { Float32toBytes } from "./float32Bytes";
  * @param value The value to write
  * @returns true if successful, false otherwise
  */
-export async function writeToRegister(device: Device, registerName: string, value: number | string): Promise<boolean> {
+export async function writeToRegister(device: any, registerName: string, value: number | string): Promise<boolean> {
   if (!device.enabled) {
     console.log(`Device ${device.name} is not enabled.`);
     return false;
@@ -72,8 +72,8 @@ export async function writeToRegister(device: Device, registerName: string, valu
       console.error(`Unsupported register length: ${register.length}`);
       return false;
     }
-  } catch (error) {
-    console.error(`Error writing to ${registerName}`, error.message);
+  } catch (error: any) {
+    console.error(`Error writing to ${registerName}`, error?.message || String(error));
     return false;
   } finally {
     if (isConnected) {
@@ -86,20 +86,44 @@ export async function writeToRegister(device: Device, registerName: string, valu
   }
 }
 
-// Mock function to find register by address since we don't have the full context
-// In a real implementation, this would query the database
-async function findRegisterByAddress(registerName: string): Promise<{ address: number; length: number } | null> {
-  // This is a mock implementation
-  const registerMap: Record<string, { address: number; length: number }> = {
-    "Temperature": { address: 40001, length: 2 },
-    "Pressure": { address: 40003, length: 2 },
-    "Valve Position": { address: 40005, length: 1 },
-    "Pump Status": { address: 1, length: 1 },
-    "Flow Rate": { address: 40007, length: 2 },
-    "Level": { address: 40009, length: 1 },
-  };
-
-  return registerMap[registerName] || null;
+// Function to find register by name in the MongoDB database
+async function findRegisterByAddress(registerName: string): Promise<{ address: number; length: number; byteOrder?: string } | null> {
+  try {
+    // Get the device ID from the request
+    const devices = await storage.getAllDevices();
+    
+    // Loop through all devices to find the register
+    for (const device of devices) {
+      if (device.registers && device.registers.length > 0) {
+        for (const register of device.registers) {
+          if (register.name.toLowerCase() === registerName.toLowerCase()) {
+            return {
+              address: register.address,
+              length: register.length || 2,
+              byteOrder: register.byteOrder || 'big'
+            };
+          }
+        }
+      }
+    }
+    
+    // If we get here, no matching register was found
+    console.error(`Register ${registerName} not found in any device`);
+    
+    // Fallback for circutor device registers
+    const circutorRegisters: Record<string, { address: number; length: number; byteOrder: string }> = {
+      "temperature": { address: 2613, length: 2, byteOrder: "AB CD" },
+      "humidity": { address: 2615, length: 2, byteOrder: "AB CD" },
+      "power": { address: 2713, length: 2, byteOrder: "AB CD" },
+      "energy": { address: 2715, length: 2, byteOrder: "AB CD" },
+      "setpoint": { address: 1013, length: 2, byteOrder: "AB CD" }
+    };
+    
+    return circutorRegisters[registerName.toLowerCase()] || null;
+  } catch (error) {
+    console.error("Error finding register:", error);
+    return null;
+  }
 }
 
 /**
