@@ -14,6 +14,8 @@ import {
   Settings,
   ChevronRight,
   User,
+  Calendar,
+  Clock,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -74,6 +76,14 @@ export default function Sidebar({ mobile = false, onNavigate }: SidebarProps) {
           icon={<FileBarChart2 className="h-4 w-4 mr-3" />} 
           label="Reports" 
           active={location === "/reports"} 
+          onClick={handleNavigation}
+        />
+        
+        <NavItem 
+          href="/schedules" 
+          icon={<Calendar className="h-4 w-4 mr-3" />} 
+          label="Schedules" 
+          active={location === "/schedules"} 
           onClick={handleNavigation}
         />
         

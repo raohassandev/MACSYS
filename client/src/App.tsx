@@ -6,6 +6,7 @@ import Devices from "@/pages/Devices";
 import DeviceDetails from "@/pages/DeviceDetails";
 import History from "@/pages/History";
 import Reports from "@/pages/Reports";
+import Schedules from "@/pages/Schedules";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/devices/:id" component={DeviceDetails} />
           <Route path="/history" component={History} />
           <Route path="/reports" component={Reports} />
+          <Route path="/schedules" component={Schedules} />
           <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>
