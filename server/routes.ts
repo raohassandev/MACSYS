@@ -3,6 +3,14 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
 import { writeToRegister } from "./controllers/modbusWriter.js";
 import { updateDeviceCache } from "./utils/configCache.js";
+import { 
+  getAllSchedules, 
+  getDeviceSchedules, 
+  createSchedule, 
+  updateSchedule, 
+  deleteSchedule, 
+  toggleSchedule 
+} from "./controllers/scheduleController";
 
 // Update device cache every minute
 const CACHE_UPDATE_INTERVAL = 60 * 1000;
@@ -494,6 +502,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
+
+  // Schedule routes
+  // Get all schedules
+  app.get(`${apiPrefix}/schedules`, getAllSchedules);
+  
+  // Get schedules for a specific device
+  app.get(`${apiPrefix}/devices/:deviceId/schedules`, getDeviceSchedules);
+  
+  // Create a new schedule
+  app.post(`${apiPrefix}/schedules`, createSchedule);
+  
+  // Update a schedule
+  app.put(`${apiPrefix}/schedules/:id`, updateSchedule);
+  
+  // Delete a schedule
+  app.delete(`${apiPrefix}/schedules/:id`, deleteSchedule);
+  
+  // Toggle schedule enabled status
+  app.patch(`${apiPrefix}/schedules/:id/toggle`, toggleSchedule);
 
   // Initialize device cache
   await updateDeviceCache();
