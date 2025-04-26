@@ -46,6 +46,11 @@ export default function DeviceCard({ device }: DeviceCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   
+  // Debug modal state changes
+  useEffect(() => {
+    console.log("DeviceCard: showEditModal state changed to:", showEditModal);
+  }, [showEditModal]);
+  
   // Find setpoint register if available
   const [setpointValue, setSetpointValue] = useState<number>(22);
   const [sliderValue, setSliderValue] = useState<number[]>([22]);
@@ -160,6 +165,12 @@ export default function DeviceCard({ device }: DeviceCardProps) {
     return await updateDevice(device.id, updatedDevice);
   };
   
+  // Handle opening edit modal
+  const handleOpenEditModal = () => {
+    console.log("Opening edit modal");
+    setShowEditModal(true);
+  };
+  
   // Define animation variants
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -221,7 +232,7 @@ export default function DeviceCard({ device }: DeviceCardProps) {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={() => setShowEditModal(true)} 
+                    onClick={handleOpenEditModal} 
                   >
                     <Edit className="h-4 w-4" />
                   </Button>

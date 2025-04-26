@@ -29,6 +29,7 @@ export default function EditDeviceModal({
   onOpenChange,
   onSave 
 }: EditDeviceModalProps) {
+  console.log("EditDeviceModal rendered with open state:", open);
   // Clone the device for editing
   const [editedDevice, setEditedDevice] = useState<Device>({ ...device });
   const [isPending, setIsPending] = useState(false);
