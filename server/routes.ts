@@ -204,8 +204,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Also save to historical data for trending
-        const deviceData = {};
-        deviceData[registerName] = parseFloat(value);
+        const deviceData: Record<string, number> = Object.create(null);
+        deviceData[registerName] = typeof value === 'string' ? parseFloat(value) : value;
         await storage.saveHistoricalData(deviceId, deviceData);
         
         return res.json({

@@ -17,6 +17,8 @@ export default function Dashboard() {
     refetch();
   };
   
+  const [viewMode, setViewMode] = useState<"standard" | "modern">("modern");
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -40,8 +42,30 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <StatsCards />
       
-      {/* Devices List */}
-      <h3 className="text-xl font-bold mb-4">Connected Devices</h3>
+      {/* View Mode Toggle */}
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold">Connected Devices</h3>
+        <div className="flex bg-muted rounded-md p-1">
+          <Button 
+            size="sm"
+            variant={viewMode === "standard" ? "default" : "ghost"} 
+            className="flex items-center gap-1"
+            onClick={() => setViewMode("standard")}
+          >
+            <Grid className="h-4 w-4" />
+            Standard
+          </Button>
+          <Button 
+            size="sm"
+            variant={viewMode === "modern" ? "default" : "ghost"} 
+            className="flex items-center gap-1"
+            onClick={() => setViewMode("modern")}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Modern
+          </Button>
+        </div>
+      </div>
       
       {isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
@@ -50,11 +74,15 @@ export default function Dashboard() {
           ))}
         </div>
       ) : devices && devices.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          {devices.map((device) => (
-            <DeviceCard key={device.id} device={device} />
-          ))}
-        </div>
+        viewMode === "modern" ? (
+          <DeviceCards />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            {devices.map((device) => (
+              <DeviceCard key={device.id} device={device} />
+            ))}
+          </div>
+        )
       ) : (
         <div className="bg-card border-border rounded-lg p-8 text-center mb-6">
           <h4 className="text-lg font-medium mb-2">No Devices Found</h4>
