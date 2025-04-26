@@ -5,8 +5,8 @@ import { getDeviceCache } from "./configCache";
 // Polling interval in milliseconds (default: 5 seconds)
 const DEFAULT_POLL_INTERVAL = 5000;
 
-// Enable mock mode for testing when devices are not available
-const MOCK_MODE = true; // Set to true to generate mock data when devices are unreachable
+// Disable mock mode to show actual device status
+const MOCK_MODE = false; // Set to false to show device as unreachable when it's offline
 
 // Track if the polling service is running
 let isPolling = false;
