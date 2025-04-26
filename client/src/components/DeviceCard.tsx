@@ -3,14 +3,31 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { Edit, Settings, Clock, Activity, Thermometer } from "lucide-react";
+import { 
+  Edit, 
+  Settings, 
+  Clock, 
+  Activity, 
+  Thermometer, 
+  Trash2,
+  AlertTriangle
+} from "lucide-react";
 import { Device } from "../types";
 import { cn } from "@/lib/utils";
 import { useRegisterData } from "@/hooks/useRegisterData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
 import { useSetpoint } from "@/hooks/useSetpoint";
+import { useDeleteDevice } from "@/hooks/useDeleteDevice";
 import { toast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface DeviceCardProps {
   device: Device;
@@ -19,6 +36,10 @@ interface DeviceCardProps {
 export default function DeviceCard({ device }: DeviceCardProps) {
   const { data: latestData } = useRegisterData(device.id);
   const { setDeviceSetpoint, isPending } = useSetpoint();
+  const { deleteDevice, isDeleting } = useDeleteDevice();
+  
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Find setpoint register if available
   const [setpointValue, setSetpointValue] = useState<number>(22);
@@ -103,6 +124,12 @@ export default function DeviceCard({ device }: DeviceCardProps) {
       console.error("Error in handleSetpointChange:", error);
     }
   };
+
+  // Handle device deletion
+  const handleDeleteDevice = () => {
+    deleteDevice(device.id);
+    setShowDeleteConfirm(false);
+  };
   
   return (
     <Card className="bg-card border-gray-700 shadow-lg hover:border-primary transition-all duration-300">
@@ -140,6 +167,23 @@ export default function DeviceCard({ device }: DeviceCardProps) {
             <Button variant="ghost" size="icon">
               <Settings className="h-4 w-4" />
             </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                    onClick={() => setShowDeleteConfirm(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Delete device</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
         
@@ -263,6 +307,35 @@ export default function DeviceCard({ device }: DeviceCardProps) {
           </Button>
         </Link>
       </CardFooter>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-destructive mr-2" />
+              Delete Device
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <span className="font-semibold">{device.name}</span>? 
+              This action cannot be undone. All associated data including historical readings
+              and schedules will be permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex space-x-2 justify-end">
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteDevice}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete Device"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
