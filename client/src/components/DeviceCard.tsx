@@ -19,6 +19,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Slider } from "@/components/ui/slider";
 import { useSetpoint } from "@/hooks/useSetpoint";
 import { useDeleteDevice } from "@/hooks/useDeleteDevice";
+import { useUpdateDevice } from "@/hooks/useUpdateDevice";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -29,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
+import EditDeviceModal from "./EditDeviceModal";
 
 interface DeviceCardProps {
   device: Device;
@@ -38,9 +40,11 @@ export default function DeviceCard({ device }: DeviceCardProps) {
   const { data: latestData } = useRegisterData(device.id);
   const { setDeviceSetpoint, isPending } = useSetpoint();
   const { deleteDevice, isDeleting } = useDeleteDevice();
+  const { updateDevice, isUpdating } = useUpdateDevice();
   
-  // Delete confirmation state
+  // Modal states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   
   // Find setpoint register if available
   const [setpointValue, setSetpointValue] = useState<number>(22);
@@ -151,6 +155,11 @@ export default function DeviceCard({ device }: DeviceCardProps) {
     setShowDeleteConfirm(false);
   };
   
+  // Handle device update
+  const handleUpdateDevice = async (updatedDevice: Device) => {
+    return await updateDevice(device.id, updatedDevice);
+  };
+  
   // Define animation variants
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -206,9 +215,22 @@ export default function DeviceCard({ device }: DeviceCardProps) {
             </Badge>
           </div>
           <div className="flex space-x-2">
-            <Button variant="ghost" size="icon">
-              <Edit className="h-4 w-4" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => setShowEditModal(true)} 
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Edit device</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button variant="ghost" size="icon">
               <Settings className="h-4 w-4" />
             </Button>
@@ -382,6 +404,14 @@ export default function DeviceCard({ device }: DeviceCardProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Edit device modal */}
+      <EditDeviceModal 
+        device={device}
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        onSave={handleUpdateDevice}
+      />
     </motion.div>
   );
 }
