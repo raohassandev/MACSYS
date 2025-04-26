@@ -1,12 +1,16 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { Edit, Settings, Clock, Activity } from "lucide-react";
+import { Edit, Settings, Clock, Activity, Thermometer } from "lucide-react";
 import { Device } from "../types";
 import { cn } from "@/lib/utils";
 import { useRegisterData } from "@/hooks/useRegisterData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Slider } from "@/components/ui/slider";
+import { useSetpoint } from "@/hooks/useSetpoint";
+import { toast } from "@/hooks/use-toast";
 
 interface DeviceCardProps {
   device: Device;
@@ -14,6 +18,12 @@ interface DeviceCardProps {
 
 export default function DeviceCard({ device }: DeviceCardProps) {
   const { data: latestData } = useRegisterData(device.id);
+  const { setDeviceSetpoint, isPending } = useSetpoint();
+  
+  // Find setpoint register if available
+  const [setpointValue, setSetpointValue] = useState<number>(22);
+  const [sliderValue, setSliderValue] = useState<number[]>([22]);
+  const [showSetpoint, setShowSetpoint] = useState<boolean>(false);
   
   // Determine if device is online (for demo, just use enabled flag)
   const isOnline = device.enabled;
@@ -25,6 +35,54 @@ export default function DeviceCard({ device }: DeviceCardProps) {
   // Get first two register values for display
   const registerNames = Object.keys(data);
   const registersToShow = registerNames.slice(0, 2);
+  
+  // Find setpoint register if exists
+  const setpointRegisterName = registerNames.find(name => 
+    name.toLowerCase().includes('setpoint') || 
+    name.toLowerCase().includes('set') || 
+    name.toLowerCase().includes('target')
+  );
+  
+  // Initialize slider with current setpoint value if found
+  useEffect(() => {
+    if (setpointRegisterName && data[setpointRegisterName] !== undefined) {
+      const value = parseFloat(data[setpointRegisterName]);
+      if (!isNaN(value)) {
+        setSetpointValue(value);
+        setSliderValue([value]);
+      }
+    }
+  }, [data, setpointRegisterName]);
+  
+  // Handle setpoint change
+  const handleSetpointChange = async () => {
+    if (!setpointRegisterName) return;
+    
+    try {
+      const success = await setDeviceSetpoint(device.id, setpointRegisterName, sliderValue[0]);
+      
+      if (success) {
+        setSetpointValue(sliderValue[0]);
+        toast({
+          title: "Setpoint updated",
+          description: `Successfully set ${setpointRegisterName} to ${sliderValue[0]}`,
+        });
+      } else {
+        toast({
+          title: "Failed to update setpoint",
+          description: "Please try again",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error setting setpoint:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update setpoint",
+        variant: "destructive",
+      });
+    }
+  };
   
   return (
     <Card className="bg-card border-gray-700 shadow-lg hover:border-primary transition-all duration-300">
@@ -122,6 +180,60 @@ export default function DeviceCard({ device }: DeviceCardProps) {
               </div>
             )}
           </div>
+          
+          {/* Setpoint Control - only show if a setpoint register exists */}
+          {setpointRegisterName && (
+            <div className="mt-4 bg-secondary/50 rounded-lg p-4 border border-gray-700">
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center">
+                  <Thermometer className="h-4 w-4 mr-2 text-primary" />
+                  <h5 className="text-sm font-medium">{setpointRegisterName}</h5>
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className="text-xs cursor-pointer transition-all" 
+                  onClick={() => setShowSetpoint(!showSetpoint)}
+                >
+                  {showSetpoint ? "Hide" : "Adjust"} Setpoint
+                </Badge>
+              </div>
+              
+              {/* Current Setpoint Value */}
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-gray-400">Current Value:</span>
+                <span className="text-sm font-medium">
+                  {data[setpointRegisterName] !== undefined ? data[setpointRegisterName] : 'N/A'}
+                </span>
+              </div>
+              
+              {/* Setpoint Slider - only visible when expanded */}
+              {showSetpoint && (
+                <div className="mt-3 animate-in fade-in slide-in-from-top duration-300">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-400">New Setpoint:</span>
+                    <span className="text-sm font-medium">{sliderValue[0].toFixed(1)}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Slider
+                      value={sliderValue}
+                      min={16}
+                      max={32}
+                      step={0.5}
+                      onValueChange={(value) => setSliderValue(value)}
+                      className="flex-1"
+                    />
+                    <Button 
+                      size="sm"
+                      onClick={handleSetpointChange}
+                      disabled={isPending || sliderValue[0] === setpointValue}
+                    >
+                      {isPending ? "..." : "Set"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter className="bg-card px-4 py-3 border-t border-gray-700">

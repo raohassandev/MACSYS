@@ -95,7 +95,10 @@ export default function ModernDeviceCard({ device, onSetpoint }: ModernDeviceCar
       let setpointRegisterName = '';
       if (latestData?.data) {
         for (const key of Object.keys(latestData.data)) {
-          if (key.toLowerCase().includes('setpoint') || key.toLowerCase().includes('set')) {
+          if (
+            key.toLowerCase().includes('setpoint') || 
+            key.toLowerCase().includes('set')
+          ) {
             setpointRegisterName = key;
             break;
           }
@@ -103,8 +106,12 @@ export default function ModernDeviceCard({ device, onSetpoint }: ModernDeviceCar
       }
       
       if (setpointRegisterName) {
-        await onSetpoint(device.id, setpointRegisterName, sliderValue[0]);
-        setSetpointValue(sliderValue[0]);
+        const result = await onSetpoint(device.id, setpointRegisterName, sliderValue[0]);
+        
+        // If the result is true or undefined (void), consider it a success
+        if (result !== false) {
+          setSetpointValue(sliderValue[0]);
+        }
       }
     } catch (error) {
       console.error("Failed to set setpoint:", error);
@@ -116,41 +123,123 @@ export default function ModernDeviceCard({ device, onSetpoint }: ModernDeviceCar
   // Time stamp from latest data
   const timeStamp = latestData ? new Date(latestData.timestamp).toLocaleTimeString() : "";
 
+  // Define animation variants
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+        when: "beforeChildren",
+        staggerChildren: 0.1
+      }
+    }
+  };
+  
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.3 }
+    }
+  };
+  
+  const pulseVariants = {
+    pulse: {
+      scale: [1, 1.02, 1],
+      transition: { 
+        duration: 2,
+        repeat: Infinity,
+        repeatType: "mirror" as const
+      }
+    }
+  };
+  
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
       className={cn(
         "rounded-xl overflow-hidden shadow-xl",
         "bg-gradient-to-r p-[2px]",
         getBackgroundColor()
       )}
     >
-      <div className="bg-card/10 backdrop-blur-sm rounded-lg p-5 h-full">
+      <div className="bg-card/10 backdrop-blur-sm rounded-lg p-5 h-full relative">
+        {/* Animated background glow */}
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent rounded-lg"
+          animate={{
+            opacity: [0.3, 0.15, 0.3],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            repeatType: "mirror"
+          }}
+        />
+        
         {/* Device header */}
-        <div className="flex justify-between items-center mb-6">
+        <motion.div 
+          variants={itemVariants}
+          className="flex justify-between items-center mb-6 relative z-10"
+        >
           <div className="flex items-center">
-            <Thermometer className="h-5 w-5 mr-2 text-white" />
+            <motion.div
+              animate={{
+                rotate: [0, 5, 0],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatType: "mirror"
+              }}
+            >
+              <Thermometer className="h-5 w-5 mr-2 text-white" />
+            </motion.div>
             <h3 className="font-medium text-white">{device.name}</h3>
           </div>
-          <div className="text-white/80 text-sm">{timeStamp}</div>
-        </div>
+          <div className="text-white/80 text-sm bg-white/10 px-2 py-1 rounded-md backdrop-blur-sm">
+            {timeStamp}
+          </div>
+        </motion.div>
         
         {/* Temperature display */}
-        <div className="flex justify-center mb-6">
-          <div className="text-center">
-            <span className="text-5xl font-bold text-white">
+        <motion.div 
+          variants={pulseVariants}
+          animate="pulse"
+          className="flex justify-center mb-6 relative z-10"
+        >
+          <div className="text-center bg-white/10 backdrop-blur-sm py-3 px-8 rounded-full">
+            <motion.span 
+              className="text-5xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent"
+              animate={{ 
+                textShadow: ['0 0 5px rgba(255,255,255,0.3)', '0 0 15px rgba(255,255,255,0.5)', '0 0 5px rgba(255,255,255,0.3)'] 
+              }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                repeatType: "mirror"
+              }}
+            >
               {temperatureValue.toFixed(1)}
-            </span>
+            </motion.span>
             <span className="text-2xl font-medium text-white/90">°C</span>
           </div>
-        </div>
+        </motion.div>
         
         {/* Data tiles */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
           {/* Humidity */}
-          <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+          <motion.div 
+            variants={itemVariants}
+            whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+            className="bg-white/10 rounded-lg p-3 backdrop-blur-sm shadow-md"
+          >
             <div className="flex items-center gap-2 mb-1">
               <Droplets className="h-4 w-4 text-white/70" />
               <span className="text-xs text-white/70">Humidity</span>
@@ -158,21 +247,40 @@ export default function ModernDeviceCard({ device, onSetpoint }: ModernDeviceCar
             <div className="text-white font-medium">
               {humidityValue.toFixed(2)}%
             </div>
-          </div>
+          </motion.div>
           
           {/* Power */}
-          <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+          <motion.div 
+            variants={itemVariants}
+            whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+            className="bg-white/10 rounded-lg p-3 backdrop-blur-sm shadow-md"
+          >
             <div className="flex items-center gap-2 mb-1">
-              <Zap className="h-4 w-4 text-white/70" />
+              <motion.div
+                animate={{
+                  scale: [1, 1.2, 1],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  repeatType: "mirror"
+                }}
+              >
+                <Zap className="h-4 w-4 text-white/70" />
+              </motion.div>
               <span className="text-xs text-white/70">Power</span>
             </div>
             <div className="text-white font-medium">
               {powerValue.toFixed(2)} kW
             </div>
-          </div>
+          </motion.div>
           
           {/* Energy */}
-          <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+          <motion.div 
+            variants={itemVariants}
+            whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+            className="bg-white/10 rounded-lg p-3 backdrop-blur-sm shadow-md"
+          >
             <div className="flex items-center gap-2 mb-1">
               <Activity className="h-4 w-4 text-white/70" />
               <span className="text-xs text-white/70">Energy</span>
@@ -180,36 +288,65 @@ export default function ModernDeviceCard({ device, onSetpoint }: ModernDeviceCar
             <div className="text-white font-medium">
               {energyValue.toFixed(2)} kWh
             </div>
-          </div>
+          </motion.div>
           
           {/* Status */}
-          <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
+          <motion.div 
+            variants={itemVariants}
+            whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+            className="bg-white/10 rounded-lg p-3 backdrop-blur-sm shadow-md"
+          >
             <div className="flex items-center gap-2 mb-1">
               <Activity className="h-4 w-4 text-white/70" />
               <span className="text-xs text-white/70">Status</span>
             </div>
-            <div className="text-white font-medium">
+            <div className="text-white font-medium flex items-center">
+              <motion.span 
+                className={cn(
+                  "inline-block w-2 h-2 rounded-full mr-2",
+                  statusValue === "Online" ? "bg-green-400" : "bg-red-400"
+                )}
+                animate={statusValue === "Online" 
+                  ? { 
+                      opacity: [1, 0.5, 1],
+                      scale: [1, 1.2, 1]
+                    } 
+                  : {}
+                }
+                transition={{
+                  duration: 2,
+                  repeat: Infinity
+                }}
+              />
               {statusValue}
             </div>
-          </div>
-          
-          {/* Control */}
-          <div className="col-span-2 bg-white/10 rounded-lg p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-1">
-              <RotateCcw className="h-4 w-4 text-white/70" />
-              <span className="text-xs text-white/70">Control</span>
-            </div>
-            <div className="text-white font-medium">
-              {controlValue}
-            </div>
-          </div>
+          </motion.div>
         </div>
         
         {/* Setpoint slider */}
-        <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+        <motion.div 
+          variants={itemVariants}
+          className="bg-white/10 rounded-lg p-4 backdrop-blur-sm shadow-md relative z-10"
+        >
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm text-white/80">Setpoint:</span>
-            <span className="text-sm font-medium text-white">{sliderValue[0].toFixed(2)}°C</span>
+            <div className="flex items-center">
+              <motion.div
+                animate={{
+                  rotate: [0, 10, 0, -10, 0],
+                }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  repeatType: "mirror"
+                }}
+              >
+                <Thermometer className="h-4 w-4 mr-2 text-white/80" />
+              </motion.div>
+              <span className="text-sm text-white/80">Setpoint Control:</span>
+            </div>
+            <span className="text-sm font-medium text-white bg-white/10 px-2 py-1 rounded-md">
+              {sliderValue[0].toFixed(1)}°C
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <Slider
@@ -220,16 +357,18 @@ export default function ModernDeviceCard({ device, onSetpoint }: ModernDeviceCar
               onValueChange={(value) => setSliderValue(value)}
               className="flex-1"
             />
-            <Button 
-              onClick={handleSetpointChange} 
-              size="sm" 
-              disabled={isPending || sliderValue[0] === setpointValue}
-              className="bg-white text-primary hover:bg-white/90"
-            >
-              {isPending ? "..." : "Set"}
-            </Button>
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button 
+                onClick={handleSetpointChange} 
+                size="sm" 
+                disabled={isPending || sliderValue[0] === setpointValue}
+                className="bg-white text-primary hover:bg-white/90 shadow-md"
+              >
+                {isPending ? "..." : "Set"}
+              </Button>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   );
