@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useDevices } from "../hooks/useDevices";
+import { useSchedules, type Schedule as ApiSchedule } from "../hooks/useSchedules"; 
 import { 
   Card, 
   CardContent, 
@@ -25,33 +26,24 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { TimePicker } from "@/components/TimePicker";
 
-// Interface for the Schedule object
-interface Schedule {
-  id: string;
-  deviceId: string;
-  registerName: string;
-  value: number;
-  time: string;
-  days: string[];
-  enabled: boolean;
-  description?: string;
-}
-
 // Component for creating a new schedule
 function NewScheduleForm() {
-  const { data: devices, isLoading } = useDevices();
-  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
-  const [selectedRegister, setSelectedRegister] = useState<string | null>(null);
+  const { data: devices, isLoading: devicesLoading } = useDevices();
+  const { createSchedule, isPending } = useSchedules();
+  
+  const [selectedDevice, setSelectedDevice] = useState<string>("");
+  const [selectedRegister, setSelectedRegister] = useState<string>("");
   const [scheduleValue, setScheduleValue] = useState<string>("22");
   const [scheduleTime, setScheduleTime] = useState<string>("08:00");
   const [scheduleDays, setScheduleDays] = useState<string[]>(["monday", "tuesday", "wednesday", "thursday", "friday"]);
   const [scheduleEnabled, setScheduleEnabled] = useState<boolean>(true);
   const [scheduleDescription, setScheduleDescription] = useState<string>("");
   
-  // Mock function to get registers for selected device
+  // Function to get registers for selected device
   const getRegistersForDevice = (deviceId: string) => {
-    // In a real app, this would fetch from the API
-    return ["temperature", "setpoint", "humidity", "power"];
+    const device = devices?.find(d => d.id === deviceId);
+    if (!device || !device.registers) return [];
+    return device.registers.map(r => r.name);
   };
   
   const handleSaveSchedule = () => {
@@ -73,8 +65,7 @@ function NewScheduleForm() {
       return;
     }
     
-    // In a real app, this would send to the API
-    const newSchedule: Omit<Schedule, "id"> = {
+    createSchedule({
       deviceId: selectedDevice,
       registerName: selectedRegister,
       value: parseFloat(scheduleValue),
@@ -82,18 +73,11 @@ function NewScheduleForm() {
       days: scheduleDays,
       enabled: scheduleEnabled,
       description: scheduleDescription || undefined
-    };
-    
-    console.log("New schedule:", newSchedule);
-    
-    toast({
-      title: "Schedule Created",
-      description: `Schedule for ${selectedRegister} has been created`,
     });
     
     // Reset form
-    setSelectedDevice(null);
-    setSelectedRegister(null);
+    setSelectedDevice("");
+    setSelectedRegister("");
     setScheduleValue("22");
     setScheduleTime("08:00");
     setScheduleDays(["monday", "tuesday", "wednesday", "thursday", "friday"]);
@@ -119,7 +103,7 @@ function NewScheduleForm() {
     }
   };
   
-  if (isLoading) {
+  if (devicesLoading) {
     return (
       <Card>
         <CardHeader>
@@ -151,7 +135,7 @@ function NewScheduleForm() {
         <div className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="device">Device</Label>
-            <Select value={selectedDevice || ""} onValueChange={setSelectedDevice}>
+            <Select value={selectedDevice} onValueChange={setSelectedDevice}>
               <SelectTrigger id="device">
                 <SelectValue placeholder="Select a device" />
               </SelectTrigger>
@@ -168,7 +152,7 @@ function NewScheduleForm() {
           <div className="grid gap-2">
             <Label htmlFor="register">Register to Control</Label>
             <Select 
-              value={selectedRegister || ""} 
+              value={selectedRegister} 
               onValueChange={setSelectedRegister}
               disabled={!selectedDevice}
             >
@@ -239,9 +223,18 @@ function NewScheduleForm() {
         </div>
       </CardContent>
       <CardFooter>
-        <Button onClick={handleSaveSchedule} className="w-full">
-          <Save className="mr-2 h-4 w-4" />
-          Save Schedule
+        <Button onClick={handleSaveSchedule} className="w-full" disabled={isPending}>
+          {isPending ? (
+            <>
+              <span className="mr-2 h-4 w-4 animate-spin">⏳</span>
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              Save Schedule
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>
@@ -250,47 +243,12 @@ function NewScheduleForm() {
 
 // Component to display a list of existing schedules
 function SchedulesList() {
-  // Mock data - in a real app this would come from an API
-  const schedules: Schedule[] = [
-    {
-      id: "1",
-      deviceId: "680bc3eaa014fd63ac35ba54",
-      registerName: "setpoint",
-      value: 22.5,
-      time: "08:00",
-      days: ["monday", "tuesday", "wednesday", "thursday", "friday"],
-      enabled: true,
-      description: "Weekday morning temperature"
-    },
-    {
-      id: "2",
-      deviceId: "680bc3eaa014fd63ac35ba54",
-      registerName: "setpoint",
-      value: 18.0,
-      time: "22:30",
-      days: ["monday", "tuesday", "wednesday", "thursday", "friday"],
-      enabled: true,
-      description: "Weekday night setback"
-    },
-    {
-      id: "3",
-      deviceId: "680c98a9b268c52449210cdc",
-      registerName: "setpoint",
-      value: 24.0,
-      time: "14:00",
-      days: ["saturday", "sunday"],
-      enabled: false,
-      description: "Weekend afternoon boost"
-    }
-  ];
+  const { schedules, isLoading, deleteSchedule, toggleSchedule } = useSchedules();
+  const { data: devices } = useDevices();
   
-  // Mock function to get device name by ID
   const getDeviceName = (id: string) => {
-    const deviceMap: Record<string, string> = {
-      "680bc3eaa014fd63ac35ba54": "Circutor",
-      "680c98a9b268c52449210cdc": "Test Device"
-    };
-    return deviceMap[id] || "Unknown Device";
+    const device = devices?.find(d => d.id === id);
+    return device?.name || "Unknown Device";
   };
   
   const formatDays = (days: string[]) => {
@@ -312,24 +270,34 @@ function SchedulesList() {
   };
   
   const handleDeleteSchedule = (id: string) => {
-    // In a real app, this would delete from the API
-    console.log("Delete schedule:", id);
-    toast({
-      title: "Schedule Deleted",
-      description: "The schedule has been removed",
-    });
+    if (confirm("Are you sure you want to delete this schedule?")) {
+      deleteSchedule(id);
+    }
   };
   
   const handleToggleSchedule = (id: string, currentStatus: boolean) => {
-    // In a real app, this would update the API
-    console.log("Toggle schedule:", id, "to", !currentStatus);
-    toast({
-      title: `Schedule ${currentStatus ? "Disabled" : "Enabled"}`,
-      description: `The schedule is now ${currentStatus ? "disabled" : "enabled"}`,
-    });
+    toggleSchedule(id);
   };
   
-  if (schedules.length === 0) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Schedules</CardTitle>
+          <CardDescription>Your automated device control schedules</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (!schedules || schedules.length === 0) {
     return (
       <Card className="h-[300px] flex items-center justify-center">
         <CardContent className="text-center p-6">
@@ -345,77 +313,87 @@ function SchedulesList() {
   }
   
   return (
-    <ScrollArea className="h-[500px]">
-      <div className="space-y-4 p-1">
-        {schedules.map(schedule => (
-          <Card key={schedule.id} className={cn(
-            "transition-all duration-200 hover:shadow-md",
-            !schedule.enabled && "opacity-70"
-          )}>
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold text-lg flex items-center">
-                    <Clock className="h-4 w-4 mr-2 text-primary" />
-                    {schedule.time} - {getDeviceName(schedule.deviceId)}
-                  </h3>
-                  <p className="text-muted-foreground text-sm mt-1">
-                    Set {schedule.registerName} to {schedule.value} on {formatDays(schedule.days)}
-                  </p>
-                  {schedule.description && (
-                    <p className="text-sm mt-2">{schedule.description}</p>
-                  )}
-                </div>
-                <div className="flex space-x-2">
-                  <Switch 
-                    checked={schedule.enabled} 
-                    onCheckedChange={() => handleToggleSchedule(schedule.id, schedule.enabled)}
-                  />
-                  <Button variant="destructive" size="icon" onClick={() => handleDeleteSchedule(schedule.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Badge variant="outline" className="bg-secondary/40">
-                  {schedule.registerName}
-                </Badge>
-                <Badge variant="outline" className="bg-secondary/40">
-                  {schedule.value}
-                </Badge>
-                <Badge variant={schedule.enabled ? "default" : "outline"} className={schedule.enabled ? "" : "text-muted-foreground"}>
-                  {schedule.enabled ? "Active" : "Disabled"}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </ScrollArea>
+    <Card>
+      <CardHeader>
+        <CardTitle>Schedules</CardTitle>
+        <CardDescription>Your automated device control schedules</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[460px] pr-4">
+          <div className="space-y-4">
+            {schedules.map(schedule => (
+              <Card key={schedule._id} className={cn(
+                "border-l-4",
+                schedule.enabled ? "border-l-green-500" : "border-l-orange-400 opacity-70"
+              )}>
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-semibold text-base">
+                        {getDeviceName(schedule.deviceId)}: {schedule.registerName}
+                      </h3>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5 mr-1" />
+                        {schedule.time} - {formatDays(schedule.days)}
+                      </div>
+                    </div>
+                    <Badge variant={schedule.enabled ? "default" : "outline"}>
+                      {schedule.enabled ? "Enabled" : "Disabled"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="text-sm bg-muted px-2 py-1 rounded-md font-mono">
+                      Value: {schedule.value}
+                    </div>
+                    {schedule.description && (
+                      <div className="text-sm text-muted-foreground italic">
+                        {schedule.description}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleToggleSchedule(schedule._id, schedule.enabled)}
+                        title={schedule.enabled ? "Disable" : "Enable"}
+                      >
+                        <Switch checked={schedule.enabled} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteSchedule(schedule._id)}
+                        className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 }
 
 export default function Schedules() {
   return (
     <div className="container py-6 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Device Schedules</h1>
-        <p className="text-muted-foreground mt-1">
-          Automate your devices by scheduling setpoint changes at specific times
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold mb-6">Device Scheduling</h1>
       
-      <Tabs defaultValue="current" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-8">
-          <TabsTrigger value="current">Current Schedules</TabsTrigger>
-          <TabsTrigger value="new">Create Schedule</TabsTrigger>
+      <Tabs defaultValue="list" className="mb-8">
+        <TabsList className="mb-4">
+          <TabsTrigger value="list">Schedules</TabsTrigger>
+          <TabsTrigger value="create">Create New</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="current">
+        <TabsContent value="list">
           <SchedulesList />
         </TabsContent>
-        
-        <TabsContent value="new">
+        <TabsContent value="create">
           <NewScheduleForm />
         </TabsContent>
       </Tabs>
