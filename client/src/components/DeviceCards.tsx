@@ -10,31 +10,12 @@ export default function DeviceCards() {
   
   // Handle setting a setpoint value
   const handleSetpoint = async (deviceId: string, registerName: string, value: number) => {
+    console.log(`DeviceCards.handleSetpoint called with:`, { deviceId, registerName, value });
     try {
-      const success = await setDeviceSetpoint(deviceId, registerName, value);
-      
-      if (success) {
-        toast({
-          title: "Setpoint updated",
-          description: `Successfully set ${registerName} to ${value}`,
-          variant: "default",
-        });
-        return true;
-      } else {
-        toast({
-          title: "Failed to update setpoint",
-          description: "Please try again later",
-          variant: "destructive",
-        });
-        return false;
-      }
+      // The setDeviceSetpoint function already handles toasts and error reporting
+      return await setDeviceSetpoint(deviceId, registerName, value);
     } catch (error) {
-      console.error("Error setting setpoint:", error);
-      toast({
-        title: "Error",
-        description: "Something went wrong while updating the setpoint",
-        variant: "destructive",
-      });
+      console.error("Unexpected error in handleSetpoint:", error);
       return false;
     }
   };

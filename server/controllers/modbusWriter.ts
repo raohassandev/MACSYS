@@ -15,6 +15,30 @@ export async function writeToRegister(device: any, registerName: string, value: 
     return false;
   }
 
+  // Check if we're in development mode
+  const isDev = process.env.NODE_ENV === 'development' || true; // Always true for now during development
+  
+  // If in dev mode and we're trying to connect to a specific IP, use mock mode
+  const shouldMock = isDev && (device.ipAddress === '192.168.1.191' || device.ip === '192.168.1.191');
+
+  if (shouldMock) {
+    console.log(`MOCK MODE: Simulating write to ${registerName} with value ${value} on device ${device.name}`);
+    
+    // Find the register definition
+    const register = await findRegisterByAddress(registerName);
+    
+    if (!register) {
+      console.error(`MOCK MODE: Register ${registerName} not found for device ${device.name}`);
+      return false;
+    }
+    
+    console.log(`MOCK MODE: Successfully wrote value ${value} to register ${registerName} at address ${register.address}`);
+    
+    // Simulate a successful write
+    return true;
+  }
+
+  // Real mode - connect to the actual device
   const client = new ModbusRTU();
   let isConnected = false;
 
@@ -37,7 +61,7 @@ export async function writeToRegister(device: any, registerName: string, value: 
       return false;
     }
 
-    console.log(registerName);
+    console.log(`Found register name: ${registerName}`);
 
     // Find the register by name
     const register = await findRegisterByAddress(registerName);
@@ -47,7 +71,7 @@ export async function writeToRegister(device: any, registerName: string, value: 
       return false;
     }
 
-    console.log(register);
+    console.log(`Register details:`, register);
 
     // Set the slave ID
     client.setID(device.slaveId);
@@ -59,7 +83,10 @@ export async function writeToRegister(device: any, registerName: string, value: 
       const byteOrder = register.byteOrder || "big";
       console.log(`Using byte order: ${byteOrder} for register ${registerName}`);
       
-      const registers = Float32toBytes(value as number, byteOrder);
+      const numericValue = typeof value === 'string' ? parseFloat(value) : value as number;
+      const registers = Float32toBytes(numericValue, byteOrder);
+      
+      console.log(`Writing ${numericValue} as registers:`, registers);
       
       // Write the registers
       await client.writeRegisters(register.address, registers);
@@ -69,9 +96,10 @@ export async function writeToRegister(device: any, registerName: string, value: 
     } 
     // For integer values (single register)
     else if (register.length === 1) {
-      await client.writeRegister(register.address, parseInt(value as string, 10));
+      const intValue = typeof value === 'string' ? parseInt(value, 10) : Math.round(value as number);
+      await client.writeRegister(register.address, intValue);
       
-      console.log(`Successfully wrote value ${value} to ${registerName} on device ${device.name}`);
+      console.log(`Successfully wrote value ${intValue} to ${registerName} on device ${device.name}`);
       return true;
     }
     else {

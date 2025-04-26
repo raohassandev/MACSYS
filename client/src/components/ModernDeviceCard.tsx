@@ -87,34 +87,65 @@ export default function ModernDeviceCard({ device, onSetpoint }: ModernDeviceCar
 
   // Handle setpoint change
   const handleSetpointChange = async () => {
-    if (!onSetpoint) return;
+    if (!onSetpoint) {
+      console.error("onSetpoint function not provided");
+      return;
+    }
     
     setIsPending(true);
+    console.log("Setting setpoint...");
+    
     try {
       // Find the right register name for setpoint
       let setpointRegisterName = '';
+      
+      // First check if we have a register specifically named "setpoint"
       if (latestData?.data) {
+        console.log("Available registers:", Object.keys(latestData.data));
+        
+        // First try to find a register with "setpoint" in the name
         for (const key of Object.keys(latestData.data)) {
-          if (
-            key.toLowerCase().includes('setpoint') || 
-            key.toLowerCase().includes('set')
-          ) {
+          if (key.toLowerCase().includes('setpoint')) {
             setpointRegisterName = key;
             break;
           }
         }
+        
+        // If not found, try with "set" in the name
+        if (!setpointRegisterName) {
+          for (const key of Object.keys(latestData.data)) {
+            if (key.toLowerCase().includes('set')) {
+              setpointRegisterName = key;
+              break;
+            }
+          }
+        }
+        
+        // If still not found, use the first register as a fallback
+        if (!setpointRegisterName && Object.keys(latestData.data).length > 0) {
+          setpointRegisterName = Object.keys(latestData.data)[0];
+        }
       }
       
+      console.log("Selected register:", setpointRegisterName);
+      
       if (setpointRegisterName) {
+        console.log(`Calling onSetpoint with deviceId: ${device.id}, registerName: ${setpointRegisterName}, value: ${sliderValue[0]}`);
         const result = await onSetpoint(device.id, setpointRegisterName, sliderValue[0]);
+        console.log("Setpoint result:", result);
         
         // If the result is true or undefined (void), consider it a success
         if (result !== false) {
           setSetpointValue(sliderValue[0]);
+          console.log("Setpoint updated successfully");
+        } else {
+          console.error("Failed to set setpoint");
         }
+      } else {
+        console.error("No suitable register found for setpoint");
       }
     } catch (error) {
-      console.error("Failed to set setpoint:", error);
+      console.error("Exception when setting setpoint:", error);
     } finally {
       setIsPending(false);
     }

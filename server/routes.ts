@@ -171,7 +171,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deviceId = req.params.id;
       const { registerName, value } = req.body;
       
+      console.log(`Received setpoint request for device ${deviceId}:`, { registerName, value });
+      
       if (!deviceId || !registerName || value === undefined) {
+        console.error("Missing required fields:", { deviceId, registerName, value });
         return res.status(400).json({
           success: false,
           message: "Missing required fields: deviceId, registerName, or value"
@@ -181,14 +184,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the device
       const device = await storage.getDeviceById(deviceId);
       if (!device) {
+        console.error(`Device with ID ${deviceId} not found`);
         return res.status(404).json({
           success: false,
           message: "Device not found"
         });
       }
       
+      console.log(`Found device:`, {
+        name: device.name,
+        ipAddress: device.ipAddress || device.ip,
+        port: device.port,
+        slaveId: device.slaveId,
+        enabled: device.enabled
+      });
+      
       // Write the value to the device
+      console.log(`Attempting to write ${value} to register ${registerName} on device ${device.name}`);
       const success = await writeToRegister(device, registerName, value);
+      
+      console.log(`writeToRegister result:`, success);
       
       if (success) {
         // Update the latest data with the new setpoint value
@@ -196,8 +211,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (latestData && latestData.data) {
           const updatedData = { 
             ...latestData.data,
-            [registerName]: parseFloat(value)
+            [registerName]: parseFloat(value as string)
           };
+          
+          console.log(`Updating realtime data for ${deviceId} with new setpoint value`);
           
           // Save updated data
           await storage.saveRealtimeData(deviceId, updatedData, latestData.status || true);
@@ -205,14 +222,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Also save to historical data for trending
         const deviceData: Record<string, number> = Object.create(null);
-        deviceData[registerName] = typeof value === 'string' ? parseFloat(value) : value;
+        deviceData[registerName] = typeof value === 'string' ? parseFloat(value) : value as number;
         await storage.saveHistoricalData(deviceId, deviceData);
+        
+        console.log(`Successfully set ${registerName} to ${value} on device ${device.name}`);
         
         return res.json({
           success: true,
           message: `Successfully set ${registerName} to ${value} on device ${device.name}`
         });
       } else {
+        console.error(`Failed to set register value on device ${device.name}`);
         return res.status(500).json({
           success: false,
           message: "Failed to set register value"
