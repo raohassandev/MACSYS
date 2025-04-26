@@ -28,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { motion } from "framer-motion";
 
 interface DeviceCardProps {
   device: Device;
@@ -94,6 +95,25 @@ export default function DeviceCard({ device }: DeviceCardProps) {
       }
     }
   }, [data, setpointRegisterName]);
+
+  // Find temperature value if exists
+  const temperatureRegisterName = registerNames.find(name => 
+    name.toLowerCase().includes('temperature') || 
+    name.toLowerCase().includes('temp')
+  );
+  const temperatureValue = temperatureRegisterName && data[temperatureRegisterName] !== undefined 
+    ? parseFloat(data[temperatureRegisterName]) 
+    : 22; // Default temperature if not found
+
+  // Background color based on temperature
+  const getBackgroundColor = () => {
+    // Cool (green) to Hot (red)
+    if (temperatureValue <= 20) return "from-emerald-500 to-emerald-400";
+    if (temperatureValue <= 25) return "from-green-500 to-green-400";
+    if (temperatureValue <= 30) return "from-yellow-500 to-yellow-400";
+    if (temperatureValue <= 35) return "from-orange-500 to-orange-400";
+    return "from-red-500 to-red-400";
+  };
   
   // Handle setpoint change
   const handleSetpointChange = async () => {
@@ -131,9 +151,34 @@ export default function DeviceCard({ device }: DeviceCardProps) {
     setShowDeleteConfirm(false);
   };
   
+  // Define animation variants
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+        when: "beforeChildren",
+        staggerChildren: 0.1
+      }
+    }
+  };
+
   return (
-    <Card className="bg-card border-gray-700 shadow-lg hover:border-primary transition-all duration-300">
-      <CardContent className="p-4">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className={cn(
+        "rounded-xl overflow-hidden shadow-xl",
+        "bg-gradient-to-r p-[2px]",
+        getBackgroundColor()
+      )}
+    >
+      <div className="bg-card/80 backdrop-blur-sm rounded-lg h-full">
+        <CardContent className="p-4">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center">
             <TooltipProvider>
@@ -307,6 +352,7 @@ export default function DeviceCard({ device }: DeviceCardProps) {
           </Button>
         </Link>
       </CardFooter>
+      </div>
 
       {/* Delete confirmation dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
@@ -336,6 +382,6 @@ export default function DeviceCard({ device }: DeviceCardProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </motion.div>
   );
 }
