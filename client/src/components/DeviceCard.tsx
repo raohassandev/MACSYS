@@ -37,11 +37,31 @@ export default function DeviceCard({ device }: DeviceCardProps) {
   const registersToShow = registerNames.slice(0, 2);
   
   // Find setpoint register if exists
-  const setpointRegisterName = registerNames.find(name => 
+  let setpointRegisterName = registerNames.find(name => 
     name.toLowerCase().includes('setpoint') || 
     name.toLowerCase().includes('set') || 
     name.toLowerCase().includes('target')
   );
+  
+  // If no setpoint register found, try with temperature
+  if (!setpointRegisterName) {
+    setpointRegisterName = registerNames.find(name =>
+      name.toLowerCase().includes('temperature') || 
+      name.toLowerCase().includes('temp')
+    );
+  }
+  
+  // If still not found and we have registers, use the first one
+  if (!setpointRegisterName && registerNames.length > 0) {
+    setpointRegisterName = registerNames[0];
+    console.log("No specific setpoint register found, using first available register:", setpointRegisterName);
+  }
+  
+  // If no registers at all, use a fallback name
+  if (!setpointRegisterName) {
+    setpointRegisterName = "setpoint";
+    console.log("Using hardcoded fallback register name: 'setpoint'");
+  }
   
   // Initialize slider with current setpoint value if found
   useEffect(() => {
@@ -56,31 +76,31 @@ export default function DeviceCard({ device }: DeviceCardProps) {
   
   // Handle setpoint change
   const handleSetpointChange = async () => {
-    if (!setpointRegisterName) return;
+    if (!setpointRegisterName) {
+      console.error("No setpoint register name available");
+      return;
+    }
+    
+    console.log(`DeviceCard.handleSetpointChange: Attempting to set ${setpointRegisterName} to ${sliderValue[0]} for device ${device.id}`);
     
     try {
+      // The setDeviceSetpoint hook already handles toasts and logging
       const success = await setDeviceSetpoint(device.id, setpointRegisterName, sliderValue[0]);
       
       if (success) {
+        console.log(`Setpoint ${setpointRegisterName} successfully updated to ${sliderValue[0]}`);
         setSetpointValue(sliderValue[0]);
-        toast({
-          title: "Setpoint updated",
-          description: `Successfully set ${setpointRegisterName} to ${sliderValue[0]}`,
-        });
+        
+        // Update the visual value in data for immediate feedback
+        // This will be overwritten on the next data poll, but gives immediate user feedback
+        if (data) {
+          data[setpointRegisterName] = sliderValue[0];
+        }
       } else {
-        toast({
-          title: "Failed to update setpoint",
-          description: "Please try again",
-          variant: "destructive",
-        });
+        console.error(`Failed to update setpoint ${setpointRegisterName}`);
       }
     } catch (error) {
-      console.error("Error setting setpoint:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update setpoint",
-        variant: "destructive",
-      });
+      console.error("Error in handleSetpointChange:", error);
     }
   };
   
