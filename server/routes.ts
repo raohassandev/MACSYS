@@ -106,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update device
+  // Update device (PUT)
   app.put(`${apiPrefix}/devices/:id`, async (req, res) => {
     try {
       const id = req.params.id;
@@ -126,6 +126,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update the polling configuration
       updatePollingConfig();
+      
+      res.json(updatedDevice);
+    } catch (error) {
+      console.error("Error updating device:", error instanceof Error ? error.message : "Unknown error");
+      if (error instanceof Error && error.name === 'ValidationError') {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to update device" });
+    }
+  });
+  
+  // Update device (PATCH - partial update)
+  app.patch(`${apiPrefix}/devices/:id`, async (req, res) => {
+    try {
+      const id = req.params.id;
+      if (!id) {
+        return res.status(400).json({ message: "Invalid device ID" });
+      }
+      
+      const updateData = req.body;
+      console.log(`Patching device ${id} with:`, updateData);
+      
+      const updatedDevice = await storage.updateDevice(id, updateData);
+      
+      if (!updatedDevice) {
+        return res.status(404).json({ message: "Device not found" });
+      }
+      
+      // Update the device cache after updating a device
+      await updateDeviceCache();
+      
+      // Restart polling for this device if it's configuration changed
+      if (updatedDevice.enabled) {
+        console.log(`Restarting polling for device ${updatedDevice.name} after update`);
+        restartDevicePolling(updatedDevice);
+      } else {
+        // Update the polling configuration generally if the device is disabled
+        console.log(`Device ${updatedDevice.name} disabled, updating polling configuration`);
+        updatePollingConfig();
+      }
       
       res.json(updatedDevice);
     } catch (error) {
@@ -559,6 +599,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Device cache management 
+  app.post(`${apiPrefix}/devices/cache/refresh`, async (req, res) => {
+    try {
+      console.log('Refreshing device cache...');
+      await updateDeviceCache();
+      updatePollingConfig();
+      res.json({ success: true, message: 'Device cache refreshed' });
+    } catch (error) {
+      console.error('Error refreshing device cache:', error instanceof Error ? error.message : "Unknown error");
+      res.status(500).json({ success: false, message: 'Failed to refresh device cache' });
     }
   });
 
