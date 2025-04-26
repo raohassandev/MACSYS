@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
 import { writeToRegister } from "./controllers/modbusWriter.js";
 import { updateDeviceCache } from "./utils/configCache.js";
+import { updatePollingConfig, restartDevicePolling } from "./utils/dataPollService";
 import { 
   getAllSchedules, 
   getDeviceSchedules, 
@@ -92,6 +93,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the device cache after adding a new device
       await updateDeviceCache();
       
+      // Update the polling configuration
+      updatePollingConfig();
+      
       res.status(201).json(newDevice);
     } catch (error) {
       console.error("Error creating device:", error instanceof Error ? error.message : "Unknown error");
@@ -119,6 +123,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update the device cache after updating a device
       await updateDeviceCache();
+      
+      // Update the polling configuration
+      updatePollingConfig();
       
       res.json(updatedDevice);
     } catch (error) {
