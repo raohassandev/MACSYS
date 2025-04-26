@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DeviceCard from "@/components/DeviceCard";
+import DeviceCards from "@/components/DeviceCards";
 import StatsCards from "@/components/StatsCard";
 import AddDeviceModal from "@/components/AddDeviceModal";
 import { useDevices } from "@/hooks/useDevices";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, Plus } from "lucide-react";
+import { RefreshCw, Plus, Grid, LayoutGrid } from "lucide-react";
 
 export default function Dashboard() {
   const [isAddDeviceModalOpen, setIsAddDeviceModalOpen] = useState(false);

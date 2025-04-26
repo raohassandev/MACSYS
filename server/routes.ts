@@ -165,6 +165,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Set a specific value to a device register
+  app.post(`${apiPrefix}/devices/:id/setpoint`, async (req, res) => {
+    try {
+      const deviceId = req.params.id;
+      const { registerName, value } = req.body;
+      
+      if (!deviceId || !registerName || value === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required fields: deviceId, registerName, or value"
+        });
+      }
+      
+      // Get the device
+      const device = await storage.getDeviceById(deviceId);
+      if (!device) {
+        return res.status(404).json({
+          success: false,
+          message: "Device not found"
+        });
+      }
+      
+      // Write the value to the device
+      const success = await writeToRegister(device, registerName, value);
+      
+      if (success) {
+        // Update the latest data with the new setpoint value
+        const latestData = await storage.getLatestRealtimeData(deviceId);
+        if (latestData && latestData.data) {
+          const updatedData = { 
+            ...latestData.data,
+            [registerName]: parseFloat(value)
+          };
+          
+          // Save updated data
+          await storage.saveRealtimeData(deviceId, updatedData, latestData.status || true);
+        }
+        
+        // Also save to historical data for trending
+        const deviceData = {};
+        deviceData[registerName] = parseFloat(value);
+        await storage.saveHistoricalData(deviceId, deviceData);
+        
+        return res.json({
+          success: true,
+          message: `Successfully set ${registerName} to ${value} on device ${device.name}`
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to set register value"
+        });
+      }
+    } catch (error) {
+      console.error("Error setting register value:", error);
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Write to device register
   app.post(`${apiPrefix}/devices/write`, async (req, res) => {
     console.log(req.body);
